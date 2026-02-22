@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar educación{% else %}Agregar educación{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'educacion:educacion_list' %}" class="hover:text-purple-600">Educación</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar{% else %}Agregar educación{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar registro educativo{% else %}Agregar educación{% endif %}
+    </h1>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Persona, nivel y estado -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Nivel y estado</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        <div class="sm:col-span-2">
+          {% include 'components/form_field.html' with field=form.persona %}
+        </div>
+        {% include 'components/form_field.html' with field=form.nivel %}
+        {% include 'components/form_field.html' with field=form.estado %}
+        {% include 'components/form_field.html' with field=form.anio_inicio %}
+        {% include 'components/form_field.html' with field=form.anio_fin %}
+      </div>
+    </div>
+
+    <!-- Institución -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Institución educativa</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.institucion %}
+        {% include 'components/form_field.html' with field=form.ciudad_institucion %}
+        <div class="sm:col-span-2">
+          {% include 'components/form_field.html' with field=form.titulo %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Certificación y documentos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Documentación</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.tipo_documento_estudio %}
+        <div></div>
+        {% include 'components/form_field.html' with field=form.tiene_cedula %}
+        {% include 'components/form_field.html' with field=form.numero_cedula %}
+        <div class="sm:col-span-2">
+          {% include 'components/form_field.html' with field=form.documento_verificado %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'educacion:educacion_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Agregar educación{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

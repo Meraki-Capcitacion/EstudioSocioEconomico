@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Estudios socioeconómicos{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">Estudios</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Estudios socioeconómicos</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Gestión y seguimiento de expedientes</p>
+  </div>
+  <a href="{% url 'estudios:estudio_create' %}"
+     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors self-start sm:self-auto"
+     style="background-color: var(--meraki-purple);"
+     onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+     onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    Nuevo estudio
+  </a>
+</div>
+
+<!-- Filtros por estado -->
+<div class="flex flex-wrap gap-1.5 mb-4">
+  <a href="?{% if q %}q={{ q }}{% endif %}"
+     class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors
+            {% if not estado_filtro %}text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}"
+     {% if not estado_filtro %}style="background-color: var(--meraki-purple);"{% endif %}>
+    Todos
+  </a>
+  {% for codigo, nombre in estados %}
+  <a href="?estado={{ codigo }}{% if q %}&q={{ q }}{% endif %}"
+     class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors
+            {% if estado_filtro == codigo %}
+              {% if codigo == 'BOR' %}bg-gray-600 text-white
+              {% elif codigo == 'VIS' %}bg-blue-600 text-white
+              {% elif codigo == 'PRO' %}bg-amber-600 text-white
+              {% elif codigo == 'COM' %}bg-emerald-600 text-white
+              {% elif codigo == 'REV' %}bg-purple-600 text-white
+              {% elif codigo == 'APR' %}bg-green-700 text-white
+              {% elif codigo == 'REC' %}bg-red-600 text-white
+              {% elif codigo == 'CAN' %}bg-gray-500 text-white
+              {% endif %}
+            {% else %}
+              {% if codigo == 'BOR' %}bg-gray-100 text-gray-600 hover:bg-gray-200
+              {% elif codigo == 'VIS' %}bg-blue-50 text-blue-700 hover:bg-blue-100
+              {% elif codigo == 'PRO' %}bg-amber-50 text-amber-700 hover:bg-amber-100
+              {% elif codigo == 'COM' %}bg-emerald-50 text-emerald-700 hover:bg-emerald-100
+              {% elif codigo == 'REV' %}bg-purple-50 text-purple-700 hover:bg-purple-100
+              {% elif codigo == 'APR' %}bg-green-50 text-green-700 hover:bg-green-100
+              {% elif codigo == 'REC' %}bg-red-50 text-red-700 hover:bg-red-100
+              {% elif codigo == 'CAN' %}bg-gray-100 text-gray-500 hover:bg-gray-200
+              {% endif %}
+            {% endif %}">
+    {{ nombre }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Barra de búsqueda -->
+<form method="get" action="" class="mb-5">
+  {% if estado_filtro %}
+  <input type="hidden" name="estado" value="{{ estado_filtro }}">
+  {% endif %}
+  <div class="flex gap-2">
+    <div class="relative flex-1">
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+        </svg>
+      </div>
+      <input type="text"
+             name="q"
+             value="{{ q }}"
+             placeholder="Buscar por nombre o folio de persona..."
+             class="block w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 bg-white"
+             autocomplete="off">
+    </div>
+    <button type="submit"
+            class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            style="background-color: var(--meraki-purple);"
+            onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+            onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      Buscar
+    </button>
+    {% if q %}
+    <a href="?{% if estado_filtro %}estado={{ estado_filtro }}{% endif %}"
+       class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+      Limpiar
+    </a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Tabla de estudios -->
+{% if estudios %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Folio / Persona
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+            Tipo de estudio
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Estado
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
+            Empresa
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+            Fecha creación
+          </th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+            Puntuación
+          </th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Acciones
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        {% for estudio in estudios %}
+        <tr class="hover:bg-purple-50 transition-colors">
+          <!-- Folio / Persona -->
+          <td class="px-4 py-3">
+            <a href="{% url 'estudios:estudio_detail' estudio.pk %}"
+               class="block text-sm font-medium text-gray-900 hover:text-purple-700">
+              {{ estudio.persona.nombre_completo }}
+            </a>
+            <span class="text-xs font-mono text-purple-600">{{ estudio.persona.folio }}</span>
+          </td>
+          <!-- Tipo de estudio -->
+          <td class="px-4 py-3 hidden sm:table-cell">
+            <span class="text-sm text-gray-600">{{ estudio.tipo_estudio }}</span>
+          </td>
+          <!-- Estado -->
+          <td class="px-4 py-3 whitespace-nowrap">
+            {% include 'components/badge_estado.html' with estado=estudio.estado %}
+          </td>
+          <!-- Empresa -->
+          <td class="px-4 py-3 hidden md:table-cell">
+            <span class="text-sm text-gray-600">{{ estudio.empresa_cliente|default:"—" }}</span>
+          </td>
+          <!-- Fecha creación -->
+          <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+            <span class="text-xs text-gray-500">{{ estudio.created_at|date:"d/m/Y" }}</span>
+          </td>
+          <!-- Puntuación -->
+          <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+            {% if estudio.puntuacion_total %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+              {% if estudio.puntuacion_total >= 80 %}bg-green-100 text-green-800
+              {% elif estudio.puntuacion_total >= 60 %}bg-yellow-100 text-yellow-800
+              {% elif estudio.puntuacion_total >= 40 %}bg-orange-100 text-orange-800
+              {% else %}bg-red-100 text-red-800{% endif %}">
+              {{ estudio.puntuacion_total }}
+            </span>
+            {% else %}
+            <span class="text-xs text-gray-400">—</span>
+            {% endif %}
+          </td>
+          <!-- Acciones -->
+          <td class="px-4 py-3 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <a href="{% url 'estudios:estudio_detail' estudio.pk %}"
+                 class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                 title="Ver detalle">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </a>
+              <a href="{% url 'estudios:estudio_update' estudio.pk %}"
+                 class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                 title="Editar">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </a>
+              <a href="{% url 'estudios:estudio_delete' estudio.pk %}"
+                 class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                 title="Eliminar">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include 'components/pagination.html' with page_obj=page_obj %}
+{% else %}
+{% if q or estado_filtro %}
+{% include 'components/empty_state.html' with
+    empty_title="Sin resultados"
+    empty_message="No se encontraron estudios con los criterios de búsqueda actuales."
+%}
+{% else %}
+{% include 'components/empty_state.html' with
+    empty_title="No hay estudios registrados"
+    empty_message="Crea el primer estudio socioeconómico para comenzar."
+%}
+<div class="flex justify-center mt-4">
+  <a href="{% url 'estudios:estudio_create' %}"
+     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+     style="background-color: var(--meraki-purple);"
+     onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+     onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    Crear primer estudio
+  </a>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

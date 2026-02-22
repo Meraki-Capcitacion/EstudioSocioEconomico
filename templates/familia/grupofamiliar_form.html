@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar familiar{% else %}Agregar familiar{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'familia:grupofamiliar_list' %}" class="hover:text-purple-600">Grupo familiar</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar{% else %}Agregar familiar{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar miembro familiar{% else %}Agregar miembro al grupo familiar{% endif %}
+    </h1>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Datos del familiar -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Datos del familiar</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        <div class="sm:col-span-2">
+          {% include 'components/form_field.html' with field=form.persona %}
+        </div>
+        <div class="sm:col-span-2">
+          {% include 'components/form_field.html' with field=form.nombre_completo %}
+        </div>
+        {% include 'components/form_field.html' with field=form.parentesco %}
+        {% include 'components/form_field.html' with field=form.edad %}
+        {% include 'components/form_field.html' with field=form.tipo_dependencia %}
+        <div></div>
+        {% include 'components/form_field.html' with field=form.ocupacion %}
+        {% include 'components/form_field.html' with field=form.escolaridad %}
+      </div>
+    </div>
+
+    <!-- Situación de residencia e ingresos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Residencia e ingresos</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+          {% include 'components/form_field.html' with field=form.vive_en_domicilio %}
+          {% include 'components/form_field.html' with field=form.ciudad_residencia %}
+        </div>
+        <div class="sm:col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+            {% include 'components/form_field.html' with field=form.aporta_ingreso %}
+            <div id="campo-monto">
+              {% include 'components/form_field.html' with field=form.monto_aportacion %}
+            </div>
+          </div>
+        </div>
+        {% include 'components/form_field.html' with field=form.telefono %}
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'familia:grupofamiliar_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Agregar familiar{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mostrar/ocultar campo de monto según si aporta ingreso
+var checkAporta = document.getElementById('id_aporta_ingreso');
+var campoMonto = document.getElementById('campo-monto');
+
+function toggleMonto() {
+  if (checkAporta && campoMonto) {
+    campoMonto.style.opacity = checkAporta.checked ? '1' : '0.4';
+    var inputMonto = campoMonto.querySelector('input');
+    if (inputMonto) inputMonto.disabled = !checkAporta.checked;
+  }
+}
+
+if (checkAporta) {
+  checkAporta.addEventListener('change', toggleMonto);
+  toggleMonto();
+}
+</script>
+{% endblock %}

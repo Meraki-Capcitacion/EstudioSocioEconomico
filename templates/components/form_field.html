@@ -1,0 +1,124 @@
+{# Componente: form_field.html
+   Uso: {% include 'components/form_field.html' with field=form.nombre %}
+   Variable requerida: field — campo BoundField de un formulario Django
+   Muestra: label, widget con clases Tailwind y mensajes de error
+   El campo adopta estilos de error (borde rojo) cuando tiene errores de validación
+#}
+<div class="mb-4">
+  {# Label #}
+  <label for="{{ field.id_for_label }}"
+         class="block text-sm font-medium mb-1.5 {% if field.errors %}text-red-700{% else %}text-gray-700{% endif %}">
+    {{ field.label }}
+    {% if field.field.required %}
+      <span class="text-red-500 ml-0.5" aria-hidden="true">*</span>
+    {% endif %}
+  </label>
+
+  {# Texto de ayuda (si existe) #}
+  {% if field.help_text %}
+    <p class="text-xs text-gray-500 mb-1.5" id="{{ field.id_for_label }}_help">
+      {{ field.help_text }}
+    </p>
+  {% endif %}
+
+  {# Widget — aplicar clases según tipo de campo y estado de error #}
+  {% if field.field.widget.input_type == 'checkbox' %}
+    {# Checkbox: layout horizontal #}
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        {{ field }}
+      </div>
+      <span class="text-sm text-gray-600">{{ field.label }}</span>
+    </div>
+    <style>
+      #{{ field.id_for_label }} {
+        width: 1rem; height: 1rem;
+        accent-color: var(--meraki-purple);
+        cursor: pointer;
+      }
+    </style>
+  {% elif field.field.widget.input_type == 'select' or field.as_widget|slice:":6" == "<selec" %}
+    {# Select / dropdown #}
+    <div class="relative">
+      {{ field }}
+    </div>
+    <style>
+      #{{ field.id_for_label }} {
+        display: block; width: 100%; padding: 0.5rem 2rem 0.5rem 0.75rem;
+        font-size: 0.875rem; line-height: 1.25rem;
+        background-color: {% if field.errors %}#fef2f2{% else %}#ffffff{% endif %};
+        border: 1px solid {% if field.errors %}#f87171{% else %}#d1d5db{% endif %};
+        border-radius: 0.375rem;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        background-size: 1.25em;
+        cursor: pointer;
+      }
+      #{{ field.id_for_label }}:focus {
+        outline: none;
+        border-color: var(--meraki-purple);
+        box-shadow: 0 0 0 3px rgba(155, 142, 196, 0.25);
+      }
+    </style>
+  {% elif field.field.widget.input_type == 'textarea' %}
+    {# Textarea #}
+    <div class="relative">
+      {{ field }}
+    </div>
+    <style>
+      #{{ field.id_for_label }} {
+        display: block; width: 100%; padding: 0.5rem 0.75rem;
+        font-size: 0.875rem; line-height: 1.5rem;
+        color: #111827;
+        background-color: {% if field.errors %}#fef2f2{% else %}#ffffff{% endif %};
+        border: 1px solid {% if field.errors %}#f87171{% else %}#d1d5db{% endif %};
+        border-radius: 0.375rem;
+        resize: vertical;
+        min-height: 5rem;
+      }
+      #{{ field.id_for_label }}:focus {
+        outline: none;
+        border-color: var(--meraki-purple);
+        box-shadow: 0 0 0 3px rgba(155, 142, 196, 0.25);
+      }
+    </style>
+  {% else %}
+    {# Input genérico: text, email, number, date, tel, password, etc. #}
+    <div class="relative">
+      {{ field }}
+    </div>
+    <style>
+      #{{ field.id_for_label }} {
+        display: block; width: 100%; padding: 0.5rem 0.75rem;
+        font-size: 0.875rem; line-height: 1.25rem;
+        color: #111827;
+        background-color: {% if field.errors %}#fef2f2{% else %}#ffffff{% endif %};
+        border: 1px solid {% if field.errors %}#f87171{% else %}#d1d5db{% endif %};
+        border-radius: 0.375rem;
+      }
+      #{{ field.id_for_label }}:focus {
+        outline: none;
+        border-color: var(--meraki-purple);
+        box-shadow: 0 0 0 3px rgba(155, 142, 196, 0.25);
+      }
+    </style>
+  {% endif %}
+
+  {# Mensajes de error #}
+  {% if field.errors %}
+    <ul class="mt-1.5 space-y-0.5" role="alert" aria-live="assertive">
+      {% for error in field.errors %}
+        <li class="flex items-start gap-1 text-xs text-red-600">
+          <svg class="h-3.5 w-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clip-rule="evenodd"/>
+          </svg>
+          {{ error }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>

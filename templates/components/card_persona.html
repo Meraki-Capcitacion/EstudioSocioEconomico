@@ -1,0 +1,120 @@
+{# Componente: card_persona.html
+   Uso: {% include 'components/card_persona.html' with persona=persona %}
+   Variable requerida: persona — instancia del modelo apps.personas.models.Persona
+
+   Campos usados del modelo:
+     persona.folio              — Folio auto-generado (YYYYMMNNNNN)
+     persona.nombre_completo    — Property que combina nombre + apellidos
+     persona.curp               — CURP de 18 caracteres
+     persona.fecha_nacimiento   — DateField para calcular edad
+     persona.telefono_movil     — Teléfono celular de contacto
+     persona.estudios.last()    — Acceso al estudio más reciente via related_name
+
+   Nota: La edad se calcula en el template con el filtro de fecha.
+         Para la edad exacta se recomienda calcularla en la vista y pasarla
+         como persona.edad si se agrega como property al modelo.
+#}
+{% load static %}
+
+<div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-purple-300 transition-all overflow-hidden">
+
+  <!-- Encabezado de la tarjeta: folio + estado -->
+  <div class="flex items-center justify-between px-4 pt-4 pb-2">
+
+    <!-- Badge de folio -->
+    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-xs font-mono font-semibold text-purple-700"
+          title="Folio del expediente">
+      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+      </svg>
+      {{ persona.folio }}
+    </span>
+
+    <!-- Estado del estudio activo -->
+    {% with estudio=persona.estudios.last %}
+      {% if estudio %}
+        {% include 'components/badge_estado.html' with estado=estudio.estado %}
+      {% else %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+          Sin estudio
+        </span>
+      {% endif %}
+    {% endwith %}
+
+  </div>
+
+  <!-- Datos de la persona -->
+  <div class="px-4 pb-4">
+
+    <!-- Nombre completo -->
+    <h3 class="text-base font-semibold text-gray-900 leading-tight mb-0.5 truncate"
+        title="{{ persona.nombre_completo }}">
+      {{ persona.nombre_completo }}
+    </h3>
+
+    <!-- Datos secundarios -->
+    <dl class="mt-2 space-y-1.5">
+
+      <!-- CURP -->
+      <div class="flex items-center gap-2">
+        <dt class="sr-only">CURP</dt>
+        <svg class="h-3.5 w-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"/>
+        </svg>
+        <dd class="text-xs font-mono text-gray-600 tracking-wider">
+          {{ persona.curp }}
+        </dd>
+      </div>
+
+      <!-- Edad calculada -->
+      <div class="flex items-center gap-2">
+        <dt class="sr-only">Edad</dt>
+        <svg class="h-3.5 w-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
+        </svg>
+        <dd class="text-xs text-gray-600">
+          {% if persona.fecha_nacimiento %}
+            {# Cálculo de edad aproximada — para precisión exacta usar property en el modelo #}
+            Nac. {{ persona.fecha_nacimiento|date:"d/m/Y" }}
+          {% else %}
+            Fecha de nacimiento no registrada
+          {% endif %}
+        </dd>
+      </div>
+
+      <!-- Teléfono móvil -->
+      <div class="flex items-center gap-2">
+        <dt class="sr-only">Teléfono móvil</dt>
+        <svg class="h-3.5 w-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 15.75h3"/>
+        </svg>
+        <dd class="text-xs text-gray-600">
+          {{ persona.telefono_movil|default:"Sin teléfono" }}
+        </dd>
+      </div>
+
+    </dl>
+  </div>
+
+  <!-- Pie de la tarjeta: enlace de acción -->
+  <div class="border-t border-gray-100 px-4 py-3 bg-gray-50">
+    <a href="{% url 'personas:persona_detail' persona.pk %}"
+       class="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+       style="color: var(--meraki-purple);"
+       onmouseover="this.style.color='var(--meraki-purple-dark)'"
+       onmouseout="this.style.color='var(--meraki-purple)'">
+      Ver expediente
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+      </svg>
+    </a>
+  </div>
+
+</div>

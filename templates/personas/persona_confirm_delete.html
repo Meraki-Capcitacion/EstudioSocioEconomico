@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar persona — {{ persona.nombre_completo }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'personas:persona_list' %}" class="hover:text-purple-600">Personas</a>
+    <span>/</span>
+    <a href="{% url 'personas:persona_detail' persona.pk %}" class="hover:text-purple-600">{{ persona.nombre_completo }}</a>
+    <span>/</span>
+    <span class="text-red-700 font-medium">Eliminar</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <!-- Icono de advertencia -->
+  <div class="flex justify-center mb-5">
+    <div class="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+      <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Título -->
+  <h1 class="text-xl font-bold text-gray-900 text-center mb-2">Eliminar persona</h1>
+  <p class="text-sm text-gray-600 text-center mb-6">Esta acción es permanente y no se puede deshacer.</p>
+
+  <!-- Tarjeta de información de la persona -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-3">Persona a eliminar</p>
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+           style="background-color: var(--meraki-purple);">
+        {{ persona.nombre|first|upper }}{{ persona.apellido_paterno|first|upper }}
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-gray-900">{{ persona.nombre_completo }}</p>
+        <p class="text-xs font-mono text-purple-700 mt-0.5">{{ persona.folio }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advertencia de cascada -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+    <div class="flex items-start gap-3">
+      <svg class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <div>
+        <p class="text-sm font-semibold text-red-800 mb-2">Se eliminarán en cascada todos los datos asociados:</p>
+        <ul class="space-y-1">
+          <li class="flex items-center gap-1.5 text-sm text-red-700">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            Todos los estudios socioeconómicos ({{ persona.estudios.count }})
+          </li>
+          <li class="flex items-center gap-1.5 text-sm text-red-700">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            Domicilios registrados ({{ persona.domicilios.count }})
+          </li>
+          <li class="flex items-center gap-1.5 text-sm text-red-700">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            Documentos subidos ({{ persona.documentos.count }})
+          </li>
+          <li class="flex items-center gap-1.5 text-sm text-red-700">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            Historial laboral, educación, familia y referencias
+          </li>
+          <li class="flex items-center gap-1.5 text-sm text-red-700">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            Datos de salud, información económica y evaluaciones de riesgo
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de confirmación -->
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-3">
+      <a href="{% url 'personas:persona_detail' persona.pk %}"
+         class="flex-1 text-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 border border-red-600 rounded-lg hover:bg-red-700 transition-colors">
+        Confirmar eliminación
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

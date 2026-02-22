@@ -1,0 +1,56 @@
+{#
+  Partial HTMX: estudio_estado.html
+  Uso: Formulario de cambio de estado del estudio
+  POST → estudios:cambiar_estado pk=estudio.pk
+  Variables requeridas: estudio, transiciones_validas
+#}
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+  <div class="flex items-center gap-3 mb-3">
+    <p class="text-xs text-gray-500 font-medium">Estado actual:</p>
+    {% include 'components/badge_estado.html' with estado=estudio.estado %}
+  </div>
+
+  {% if transiciones_validas %}
+  <form method="post" action="{% url 'estudios:cambiar_estado' estudio.pk %}">
+    {% csrf_token %}
+    <div class="space-y-2 mb-3">
+      {% for codigo in transiciones_validas %}
+      <label class="flex items-center gap-3 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition-colors">
+        <input type="radio" name="estado" value="{{ codigo }}" required
+               style="accent-color: var(--meraki-purple);">
+        <span class="text-sm font-medium text-gray-800">
+          {% if codigo == 'BOR' %}Borrador
+          {% elif codigo == 'VIS' %}Visita programada
+          {% elif codigo == 'PRO' %}En proceso
+          {% elif codigo == 'COM' %}Completado
+          {% elif codigo == 'REV' %}En revisión
+          {% elif codigo == 'APR' %}Aprobado
+          {% elif codigo == 'REC' %}Rechazado
+          {% elif codigo == 'CAN' %}Cancelado
+          {% endif %}
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      <label for="observacion" class="block text-xs font-medium text-gray-700 mb-1">
+        Observación (opcional)
+      </label>
+      <textarea id="observacion" name="observacion" rows="2"
+                placeholder="Motivo del cambio de estado..."
+                class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+    </div>
+    <button type="submit"
+            class="w-full px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
+            style="background-color: var(--meraki-purple);"
+            onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+            onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      Actualizar estado
+    </button>
+  </form>
+  {% else %}
+  <p class="text-sm text-gray-500 text-center py-2">
+    No hay transiciones de estado disponibles para el estado actual.
+  </p>
+  {% endif %}
+</div>

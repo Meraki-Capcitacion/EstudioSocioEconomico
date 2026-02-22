@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar persona — {{ form.instance.nombre_completo }}{% else %}Nueva persona{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'personas:persona_list' %}" class="hover:text-purple-600">Personas</a>
+    <span>/</span>
+    {% if form.instance.pk %}
+    <a href="{% url 'personas:persona_detail' form.instance.pk %}" class="hover:text-purple-600">{{ form.instance.nombre_completo }}</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">Editar</span>
+    {% else %}
+    <span class="text-gray-800 font-medium">Nueva persona</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Encabezado -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}
+        Editar persona
+      {% else %}
+        Nueva persona
+      {% endif %}
+    </h1>
+    {% if form.instance.pk %}
+    <p class="text-sm text-gray-500 mt-0.5">
+      Folio: <span class="font-mono font-semibold text-purple-700">{{ form.instance.folio }}</span>
+    </p>
+    {% else %}
+    <p class="text-sm text-gray-500 mt-0.5">El folio se genera automáticamente al guardar.</p>
+    {% endif %}
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- Errores generales del formulario -->
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- SECCIÓN 1: Datos básicos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <button type="button"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+              onclick="toggleSeccion('sec-basicos')">
+        <span class="text-sm font-semibold text-gray-800">1. Datos básicos</span>
+        <svg id="icon-sec-basicos" class="h-4 w-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="sec-basicos" class="px-5 pb-5 border-t border-gray-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 pt-4">
+          {% include 'components/form_field.html' with field=form.nombre %}
+          {% include 'components/form_field.html' with field=form.apellido_paterno %}
+          {% include 'components/form_field.html' with field=form.apellido_materno %}
+          <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
+            {% include 'components/form_field.html' with field=form.fecha_nacimiento %}
+            {% include 'components/form_field.html' with field=form.lugar_nacimiento %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Identificaciones -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <button type="button"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+              onclick="toggleSeccion('sec-identificaciones')">
+        <span class="text-sm font-semibold text-gray-800">2. Identificaciones oficiales</span>
+        <svg id="icon-sec-identificaciones" class="h-4 w-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="sec-identificaciones" class="px-5 pb-5 border-t border-gray-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 pt-4">
+          {% include 'components/form_field.html' with field=form.tipo_identificacion %}
+          {% include 'components/form_field.html' with field=form.numero_identificacion %}
+          {% include 'components/form_field.html' with field=form.curp %}
+          {% include 'components/form_field.html' with field=form.rfc %}
+          {% include 'components/form_field.html' with field=form.nss %}
+          <div></div>
+          {% include 'components/form_field.html' with field=form.licencia_manejo_folio %}
+          {% include 'components/form_field.html' with field=form.cartilla_militar_folio %}
+          <div class="sm:col-span-2">
+            {% include 'components/form_field.html' with field=form.acta_nacimiento_numero %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: Contacto -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <button type="button"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+              onclick="toggleSeccion('sec-contacto')">
+        <span class="text-sm font-semibold text-gray-800">3. Información de contacto</span>
+        <svg id="icon-sec-contacto" class="h-4 w-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="sec-contacto" class="px-5 pb-5 border-t border-gray-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 pt-4">
+          <div class="sm:col-span-2">
+            {% include 'components/form_field.html' with field=form.email %}
+          </div>
+          {% include 'components/form_field.html' with field=form.telefono_movil %}
+          {% include 'components/form_field.html' with field=form.telefono_fijo %}
+          <div class="sm:col-span-2">
+            {% include 'components/form_field.html' with field=form.facebook_perfil %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: Estado civil y dependientes -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <button type="button"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+              onclick="toggleSeccion('sec-civil')">
+        <span class="text-sm font-semibold text-gray-800">4. Estado civil y dependientes</span>
+        <svg id="icon-sec-civil" class="h-4 w-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="sec-civil" class="px-5 pb-5 border-t border-gray-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 pt-4">
+          {% include 'components/form_field.html' with field=form.estado_civil %}
+          {% include 'components/form_field.html' with field=form.numero_dependientes %}
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 5: Datos físicos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <button type="button"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+              onclick="toggleSeccion('sec-fisico')">
+        <span class="text-sm font-semibold text-gray-800">5. Datos físicos</span>
+        <svg id="icon-sec-fisico" class="h-4 w-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="sec-fisico" class="px-5 pb-5 border-t border-gray-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 pt-4">
+          {% include 'components/form_field.html' with field=form.peso %}
+          {% include 'components/form_field.html' with field=form.estatura %}
+          <div class="sm:col-span-2">
+            {% include 'components/form_field.html' with field=form.activo %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="flex items-center justify-between gap-3 pt-2">
+      <a href="{% if form.instance.pk %}{% url 'personas:persona_detail' form.instance.pk %}{% else %}{% url 'personas:persona_list' %}{% endif %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Registrar persona{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSeccion(id) {
+  var sec = document.getElementById(id);
+  var icon = document.getElementById('icon-' + id);
+  if (sec) {
+    sec.classList.toggle('hidden');
+    if (icon) {
+      icon.style.transform = sec.classList.contains('hidden') ? 'rotate(-90deg)' : '';
+    }
+  }
+}
+</script>
+{% endblock %}

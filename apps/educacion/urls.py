@@ -18,4 +18,11 @@ urlpatterns = [
     path('<int:pk>/', views.EducacionDetailView.as_view(), name='educacion_detail'),
     path('<int:pk>/editar/', views.EducacionUpdateView.as_view(), name='educacion_update'),
     path('<int:pk>/eliminar/', views.EducacionDeleteView.as_view(), name='educacion_delete'),
+
+    # Idioma
+    path('idiomas/', views.IdiomaListView.as_view(), name='idioma_list'),
+    path('idiomas/crear/', views.IdiomaCreateView.as_view(), name='idioma_create'),
+    path('idiomas/<int:pk>/', views.IdiomaDetailView.as_view(), name='idioma_detail'),
+    path('idiomas/<int:pk>/editar/', views.IdiomaUpdateView.as_view(), name='idioma_update'),
+    path('idiomas/<int:pk>/eliminar/', views.IdiomaDeleteView.as_view(), name='idioma_delete'),
 ]

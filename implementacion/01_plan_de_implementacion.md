@@ -132,20 +132,20 @@ Sistema funcional con autenticación, navegación y estructura visual base.
 - [x] `HomeView` en `esteconom/urls.py` con context de estadísticas (total_personas, total_estudios, estudios_en_proceso, estudios_aprobados)
 
 ### Componentes reutilizables (`templates/components/`)
-- [ ] `badge_estado.html` — Badge de color según estado del estudio
-- [ ] `badge_riesgo.html` — Badge según nivel de riesgo
-- [ ] `pagination.html` — Paginación Tailwind
-- [ ] `form_field.html` — Campo con label + error
-- [ ] `confirm_modal.html` — Modal de confirmación (HTMX)
-- [ ] `empty_state.html` — Estado vacío para listas sin resultados
-- [ ] `card_persona.html` — Tarjeta resumen de persona
-- [ ] `notif_badge.html` — Badge de notificaciones no leídas
+- [x] `badge_estado.html` — Badge de color según estado del estudio
+- [x] `badge_riesgo.html` — Badge según nivel de riesgo
+- [x] `pagination.html` — Paginación Tailwind
+- [x] `form_field.html` — Campo con label + error
+- [x] `confirm_modal.html` — Modal de confirmación (HTMX)
+- [x] `empty_state.html` — Estado vacío para listas sin resultados
+- [x] `card_persona.html` — Tarjeta resumen de persona
+- [x] `notif_badge.html` — Badge de notificaciones no leídas
 
 ---
 
 ## FASE 2 — Expediente del candidato (panel analista)
 
-**Estado:** ⬜ Pendiente
+**Estado:** ✅ Completada
 **Prioridad:** 🔴 Crítico
 **Dependencias:** FASE 1
 
@@ -153,14 +153,14 @@ Sistema funcional con autenticación, navegación y estructura visual base.
 Permitir al analista capturar y gestionar el expediente completo desde el sistema interno.
 
 ### Templates de `personas`
-- [ ] `persona_list.html` — Tabla paginada con búsqueda por folio/nombre/CURP
-- [ ] `persona_detail.html` — Vista hub con pestañas: Datos, Documentos, Estudios
-- [ ] `persona_form.html` — Formulario creación/edición (shared create+update)
-- [ ] `persona_confirm_delete.html` — Confirmación de borrado con advertencia de cascada
+- [x] `persona_list.html` — Tabla paginada con búsqueda por folio/nombre/CURP
+- [x] `persona_detail.html` — Vista hub con pestañas: Datos, Documentos, Estudios, Domicilios
+- [x] `persona_form.html` — Formulario creación/edición (shared create+update)
+- [x] `persona_confirm_delete.html` — Confirmación de borrado con advertencia de cascada
 
 ### Templates de `estudios`
-- [ ] `estudio_list.html` — Lista con filtros por estado (tabs o badges), búsqueda
-- [ ] `estudio_detail.html` — Vista hub con pestañas:
+- [x] `estudio_list.html` — Lista con filtros por estado (tabs o badges), búsqueda
+- [x] `estudio_detail.html` — Vista hub con pestañas:
   - Resumen general
   - Domicilio
   - Educación / Idiomas
@@ -171,28 +171,41 @@ Permitir al analista capturar y gestionar el expediente completo desde el sistem
   - Visitas
   - Documentos
   - Evaluación
-- [ ] `estudio_form.html` — Crear/editar estudio
-- [ ] `estudio_estado.html` (partial HTMX) — Cambio de estado con confirmación
+- [x] `estudio_form.html` — Crear/editar estudio
+- [x] `estudio_confirm_delete.html` — Confirmación de borrado con advertencia cascada
+- [x] `estudio_estado.html` (partial) — Cambio de estado con confirmación
 
 ### Templates de datos relacionados (desde detalle del estudio/persona)
-- [ ] `domicilios/domicilio_form.html`
-- [ ] `educacion/educacion_form.html` + `idioma_form.html`
-- [ ] `salud/saludpersona_form.html`
-- [ ] `familia/grupofamiliar_form.html`
-- [ ] `laboral/historiallaboral_form.html` + botón verificar (HTMX)
-- [ ] `referencias/referencia_form.html` + botón verificar (HTMX)
-- [ ] `economia/situacioneconomica_form.html`
-- [ ] `evaluacion/evaluacionriesgo_form.html` — con cálculo de score_final en JS
+- [x] `domicilios/domicilio_form.html`
+- [x] `educacion/educacion_form.html` + `idioma_form.html`
+- [x] `personas/saludpersona_form.html` (modelo en app personas)
+- [x] `familia/grupofamiliar_form.html`
+- [x] `laboral/historiallaboral_form.html` + sección de verificación
+- [x] `referencias/referencia_form.html` + sección de verificación
+- [x] `economia/situacioneconomica_form.html` — con resumen dinámico en JS
+- [x] `evaluacion/evaluacionriesgo_form.html` — con cálculo de score_final en JS
 
 ### Templates de `documentos`
-- [ ] `documento_list.html` — Bandeja de documentos pendientes de verificar
-- [ ] `documento_form.html` — Upload con preview
-- [ ] Botón "Marcar verificado" inline (HTMX)
+- [x] `documento_list.html` — Bandeja de documentos con filtros por tipo y estado
+- [x] `documento_form.html` — Upload con preview (FileReader API)
+- [x] Botón "Marcar verificado" inline via form POST simple
 
 ### Lógica de cambio de estado
-- [ ] Vista `CambiarEstadoView` con validación de `TRANSICIONES_VALIDAS`
-- [ ] Modal de confirmación con campo de observación
-- [ ] Bloqueo visual de botones según estado actual
+- [x] Vista `CambiarEstadoView` con validación de `TRANSICIONES_VALIDAS`
+- [x] Modal de confirmación con campo de observación en `estudio_detail.html`
+- [x] Botones de transición según estado actual (solo muestra los válidos)
+
+### Actualizaciones de vistas
+- [x] `PersonaListView.get_queryset()` — búsqueda por folio/nombre/CURP
+- [x] `EstudioListView.get_queryset()` — búsqueda y filtro por estado
+- [x] `EstudioDetailView.get_context_data()` — contexto de transiciones válidas
+- [x] `DocumentoListView.get_queryset()` — filtro por tipo y estado verificado
+- [x] `SaludPersonaCreateView` + `SaludPersonaUpdateView` — nuevas vistas en app personas
+- [x] Rutas de Idioma agregadas a `educacion/urls.py`
+- [x] Ruta `cambiar_estado` agregada a `estudios/urls.py`
+- [x] Rutas de `SaludPersona` agregadas a `personas/urls.py`
+
+*Completada el 2026-02-22.*
 
 ---
 
@@ -411,7 +424,7 @@ Pillow
 |------|--------|-----------|--------|
 | 0 | Completar modelos | 🔴 Crítico | ✅ Completada |
 | 1 | Base de templates y auth | 🔴 Crítico | ✅ Completada |
-| 2 | Expediente del candidato (analista) | 🔴 Crítico | ⬜ Pendiente |
+| 2 | Expediente del candidato (analista) | 🔴 Crítico | ✅ Completada |
 | 3 | Portal público de autogestión | 🟠 Alto | ⬜ Pendiente |
 | 4 | App del inspector en campo | 🟠 Alto | ⬜ Pendiente |
 | 5 | Generación del reporte PDF | 🟠 Alto | ⬜ Pendiente |
@@ -420,5 +433,5 @@ Pillow
 
 ---
 
-*Plan elaborado el 2026-02-21. Actualizado el 2026-02-21 tras completar Fase 0 y Fase 1.*
+*Plan elaborado el 2026-02-21. Actualizado el 2026-02-22 tras completar Fase 0, Fase 1 y Fase 2.*
 *Basado en el reporte PDF de referencia (Meraki Consultoría) y el análisis del formulario Google Forms de Meraki.*

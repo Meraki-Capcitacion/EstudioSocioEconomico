@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar documento{% else %}Subir documento{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'documentos:documento_list' %}" class="hover:text-purple-600">Documentos</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar{% else %}Subir documento{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar documento{% else %}Subir documento{% endif %}
+    </h1>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Datos del documento -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Datos del documento</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.persona %}
+        {% include 'components/form_field.html' with field=form.estudio %}
+        {% include 'components/form_field.html' with field=form.tipo %}
+        {% include 'components/form_field.html' with field=form.nombre_archivo %}
+      </div>
+    </div>
+
+    <!-- Upload de archivo con preview -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Archivo</h2>
+
+      <!-- Área de upload -->
+      <div id="zona-upload"
+           class="relative border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-50 transition-colors cursor-pointer"
+           onclick="document.getElementById('id_archivo').click()">
+        <input type="file"
+               id="id_archivo"
+               name="archivo"
+               class="sr-only"
+               accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+               onchange="mostrarPreview(this)">
+        <div id="upload-placeholder">
+          <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <p class="text-sm font-medium text-gray-600 mb-1">Haz clic para seleccionar un archivo</p>
+          <p class="text-xs text-gray-400">PDF, Word, Excel, imágenes — máx. 10 MB</p>
+        </div>
+        <div id="upload-preview" class="hidden">
+          <!-- Preview dinámico (JS) -->
+        </div>
+      </div>
+
+      {% if form.archivo.errors %}
+      <p class="mt-2 text-xs text-red-600">{{ form.archivo.errors|join:", " }}</p>
+      {% endif %}
+
+      {% if form.instance.pk and form.instance.archivo %}
+      <div class="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <svg class="h-5 w-5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium text-gray-700 truncate">Archivo actual</p>
+          <a href="{{ form.instance.archivo.url }}" target="_blank"
+             class="text-xs text-purple-600 hover:underline truncate block">
+            {{ form.instance.nombre_archivo|default:form.instance.archivo.name }}
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Verificación -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Verificación</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.verificado %}
+        {% include 'components/form_field.html' with field=form.verificado_por %}
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'documentos:documento_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Subir documento{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function mostrarPreview(input) {
+  var placeholder = document.getElementById('upload-placeholder');
+  var preview = document.getElementById('upload-preview');
+  var zona = document.getElementById('zona-upload');
+
+  if (input.files && input.files[0]) {
+    var archivo = input.files[0];
+    var lector = new FileReader();
+    var esImagen = archivo.type.startsWith('image/');
+
+    lector.onload = function(e) {
+      preview.innerHTML = '';
+
+      if (esImagen) {
+        // Preview de imagen
+        var img = document.createElement('img');
+        img.src = e.target.result;
+        img.alt = 'Vista previa';
+        img.className = 'max-h-48 mx-auto rounded-lg shadow-md object-contain';
+        preview.appendChild(img);
+      } else {
+        // Ícono para otros tipos de archivo
+        var iconDiv = document.createElement('div');
+        iconDiv.className = 'flex flex-col items-center';
+        var extension = archivo.name.split('.').pop().toUpperCase();
+        iconDiv.innerHTML = '<div class="h-16 w-16 rounded-xl bg-gray-100 flex items-center justify-center mb-2">' +
+          '<span class="text-lg font-bold text-gray-600">' + extension + '</span>' +
+          '</div>';
+        preview.appendChild(iconDiv);
+      }
+
+      var infoDiv = document.createElement('div');
+      infoDiv.className = 'mt-3';
+      var tamanio = (archivo.size / 1024 / 1024).toFixed(2);
+      infoDiv.innerHTML = '<p class="text-sm font-medium text-gray-700">' + archivo.name + '</p>' +
+        '<p class="text-xs text-gray-400">' + tamanio + ' MB</p>';
+      preview.appendChild(infoDiv);
+
+      var cambiarBtn = document.createElement('button');
+      cambiarBtn.type = 'button';
+      cambiarBtn.className = 'mt-2 text-xs text-purple-600 hover:underline';
+      cambiarBtn.textContent = 'Cambiar archivo';
+      cambiarBtn.onclick = function() { input.click(); };
+      preview.appendChild(cambiarBtn);
+
+      placeholder.classList.add('hidden');
+      preview.classList.remove('hidden');
+      zona.classList.remove('border-dashed');
+      zona.classList.add('border-purple-400', 'bg-purple-50');
+    };
+
+    lector.readAsDataURL(archivo);
+  }
+}
+
+// Drag and drop
+var zona = document.getElementById('zona-upload');
+if (zona) {
+  zona.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    zona.classList.add('border-purple-500', 'bg-purple-100');
+  });
+  zona.addEventListener('dragleave', function() {
+    zona.classList.remove('border-purple-500', 'bg-purple-100');
+  });
+  zona.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zona.classList.remove('border-purple-500', 'bg-purple-100');
+    var fileInput = document.getElementById('id_archivo');
+    if (e.dataTransfer.files.length > 0) {
+      fileInput.files = e.dataTransfer.files;
+      mostrarPreview(fileInput);
+    }
+  });
+}
+</script>
+{% endblock %}

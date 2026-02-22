@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar datos de salud{% else %}Registrar salud{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'personas:persona_list' %}" class="hover:text-purple-600">Personas</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar salud{% else %}Registrar salud{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar datos de salud{% else %}Registrar datos de salud{% endif %}
+    </h1>
+    <p class="text-sm text-gray-500 mt-0.5">Información sobre el estado de salud general de la persona.</p>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Estado general de salud -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Estado de salud</h2>
+
+      {% if not form.instance.pk %}
+      <div class="mb-4">
+        {% include 'components/form_field.html' with field=form.persona %}
+      </div>
+      {% endif %}
+
+      <!-- Nivel de salud como radio buttons visuales -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Estado de salud general
+          <span class="text-red-500 ml-0.5">*</span>
+        </label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {% for valor, etiqueta in form.fields.nivel_salud.choices %}
+          {% if valor %}
+          <label class="flex flex-col items-center gap-1 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition-colors text-center
+                         {% if form.nivel_salud.value == valor %}border-purple-500 bg-purple-50{% endif %}">
+            <input type="radio" name="nivel_salud" value="{{ valor }}"
+                   {% if form.nivel_salud.value == valor %}checked{% endif %}
+                   class="sr-only">
+            <span class="text-lg">
+              {% if valor == 'EXC' %}A
+              {% elif valor == 'BUE' %}B
+              {% elif valor == 'REG' %}C
+              {% else %}D{% endif %}
+            </span>
+            <span class="text-xs font-medium
+              {% if valor == 'EXC' %}text-green-700
+              {% elif valor == 'BUE' %}text-emerald-700
+              {% elif valor == 'REG' %}text-yellow-700
+              {% else %}text-red-700{% endif %}">
+              {{ etiqueta }}
+            </span>
+          </label>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% if form.nivel_salud.errors %}
+        <p class="mt-1 text-xs text-red-600">{{ form.nivel_salud.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Enfermedades y antecedentes -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Historial médico</h2>
+      <div class="space-y-0">
+        {% include 'components/form_field.html' with field=form.enfermedades_cronicas %}
+        {% include 'components/form_field.html' with field=form.antecedentes_familiares %}
+      </div>
+    </div>
+
+    <!-- Consumo de sustancias -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Consumo de sustancias</h2>
+      <p class="text-xs text-gray-500 mb-3">Incluir bebidas alcohólicas, tabaco, medicamentos sin prescripción u otros. Indicar frecuencia.</p>
+      {% include 'components/form_field.html' with field=form.consumo_sustancias %}
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'personas:persona_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Registrar datos de salud{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Resaltar visualmente el radio button seleccionado
+document.querySelectorAll('input[name="nivel_salud"]').forEach(function(radio) {
+  radio.addEventListener('change', function() {
+    document.querySelectorAll('input[name="nivel_salud"]').forEach(function(r) {
+      var label = r.closest('label');
+      if (label) {
+        label.classList.remove('border-purple-500', 'bg-purple-50');
+        if (r.checked) label.classList.add('border-purple-500', 'bg-purple-50');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

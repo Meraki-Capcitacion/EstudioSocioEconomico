@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar situación económica{% else %}Registrar situación económica{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'economia:situacioneconomica_list' %}" class="hover:text-purple-600">Economía</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar{% else %}Registrar situación económica{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar situación económica{% else %}Registrar situación económica{% endif %}
+    </h1>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Estudio vinculado -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Datos generales</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.estudio %}
+        {% include 'components/form_field.html' with field=form.situacion_economica_percibida %}
+      </div>
+    </div>
+
+    <!-- Ingresos y egresos en columnas + resumen dinámico -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+      <!-- Ingresos -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
+          Ingresos mensuales
+        </h2>
+        <div class="space-y-0">
+          {% include 'components/form_field.html' with field=form.salario_mensual %}
+          {% include 'components/form_field.html' with field=form.bonos_comisiones %}
+          {% include 'components/form_field.html' with field=form.ingresos_extra %}
+          {% include 'components/form_field.html' with field=form.apoyo_familiar %}
+          {% include 'components/form_field.html' with field=form.otros_ingresos %}
+          {% include 'components/form_field.html' with field=form.descripcion_otros_ingresos %}
+        </div>
+      </div>
+
+      <!-- Egresos -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
+          Egresos mensuales
+        </h2>
+        <div class="space-y-0">
+          {% include 'components/form_field.html' with field=form.gasto_alimentacion %}
+          {% include 'components/form_field.html' with field=form.gasto_vivienda %}
+          {% include 'components/form_field.html' with field=form.gasto_servicios %}
+          {% include 'components/form_field.html' with field=form.gasto_transporte %}
+          {% include 'components/form_field.html' with field=form.gasto_educacion %}
+          {% include 'components/form_field.html' with field=form.gasto_salud %}
+          {% include 'components/form_field.html' with field=form.gasto_deudas %}
+          {% include 'components/form_field.html' with field=form.otros_gastos %}
+          {% include 'components/form_field.html' with field=form.descripcion_otros_gastos %}
+        </div>
+      </div>
+
+      <!-- Resumen dinámico -->
+      <div class="space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 sticky top-20">
+          <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Resumen financiero</h2>
+          <div class="space-y-3">
+            <div class="bg-green-50 rounded-lg p-3">
+              <p class="text-xs text-green-600 font-medium">Total ingresos mensuales</p>
+              <p class="text-xl font-bold text-green-700" id="total-ingresos">$0.00</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-3">
+              <p class="text-xs text-red-600 font-medium">Total egresos mensuales</p>
+              <p class="text-xl font-bold text-red-700" id="total-egresos">$0.00</p>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-3">
+              <p class="text-xs text-purple-600 font-medium">Capacidad de ahorro</p>
+              <p class="text-xl font-bold" id="ahorro">$0.00</p>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 mt-3">Los valores se actualizan automáticamente al modificar los campos.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patrimonio -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Patrimonio</h2>
+
+      <!-- Automóvil -->
+      <div class="mb-5">
+        <div class="flex items-center gap-3 mb-3">
+          {% include 'components/form_field.html' with field=form.tiene_automovil %}
+        </div>
+        <div id="campos-auto" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 pl-2 border-l-2 border-purple-200">
+          {% include 'components/form_field.html' with field=form.automovil_marca_modelo %}
+          {% include 'components/form_field.html' with field=form.automovil_anio %}
+          {% include 'components/form_field.html' with field=form.automovil_valor_comercial %}
+          {% include 'components/form_field.html' with field=form.automovil_con_adeudo %}
+        </div>
+      </div>
+
+      <!-- Inmueble -->
+      <div class="mb-5">
+        <div class="flex items-center gap-3 mb-3">
+          {% include 'components/form_field.html' with field=form.patrimonio_inmobiliario %}
+        </div>
+        <div id="campos-inmueble" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 pl-2 border-l-2 border-purple-200">
+          {% include 'components/form_field.html' with field=form.descripcion_patrimonio %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Cuentas bancarias y AFORE -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Servicios financieros</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% include 'components/form_field.html' with field=form.institucion_bancaria %}
+        {% include 'components/form_field.html' with field=form.afore %}
+      </div>
+    </div>
+
+    <!-- Créditos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Créditos y deudas</h2>
+      <div class="mb-4">
+        {% include 'components/form_field.html' with field=form.tiene_creditos %}
+      </div>
+      <div id="campos-creditos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4">
+        {% include 'components/form_field.html' with field=form.credito_hipotecario %}
+        {% include 'components/form_field.html' with field=form.credito_automotriz %}
+        {% include 'components/form_field.html' with field=form.tarjetas_credito %}
+        {% include 'components/form_field.html' with field=form.tarjeta_credito_banco %}
+        {% include 'components/form_field.html' with field=form.tienda_departamental_nombre %}
+        {% include 'components/form_field.html' with field=form.tienda_departamental_adeudo %}
+        {% include 'components/form_field.html' with field=form.prestamos_personales %}
+        {% include 'components/form_field.html' with field=form.otros_creditos %}
+        <div class="sm:col-span-2 lg:col-span-3">
+          {% include 'components/form_field.html' with field=form.descripcion_otros_creditos %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'economia:situacioneconomica_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar cambios{% else %}Registrar situación económica{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Campos de ingreso y egreso para el cálculo del resumen
+var camposIngreso = ['salario_mensual', 'bonos_comisiones', 'ingresos_extra', 'apoyo_familiar', 'otros_ingresos'];
+var camposEgreso = ['gasto_alimentacion', 'gasto_vivienda', 'gasto_servicios', 'gasto_transporte', 'gasto_educacion', 'gasto_salud', 'gasto_deudas', 'otros_gastos'];
+
+function formatearMoneda(valor) {
+  return '$' + parseFloat(valor || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function calcularResumen() {
+  var totalIngresos = camposIngreso.reduce(function(sum, campo) {
+    var input = document.getElementById('id_' + campo);
+    return sum + parseFloat(input && input.value || 0);
+  }, 0);
+
+  var totalEgresos = camposEgreso.reduce(function(sum, campo) {
+    var input = document.getElementById('id_' + campo);
+    return sum + parseFloat(input && input.value || 0);
+  }, 0);
+
+  var ahorro = totalIngresos - totalEgresos;
+
+  document.getElementById('total-ingresos').textContent = formatearMoneda(totalIngresos);
+  document.getElementById('total-egresos').textContent = formatearMoneda(totalEgresos);
+
+  var elAhorro = document.getElementById('ahorro');
+  elAhorro.textContent = formatearMoneda(ahorro);
+  elAhorro.className = 'text-xl font-bold ' + (ahorro >= 0 ? 'text-purple-700' : 'text-red-700');
+}
+
+// Escuchar cambios en campos de ingreso y egreso
+[].concat(camposIngreso, camposEgreso).forEach(function(campo) {
+  var input = document.getElementById('id_' + campo);
+  if (input) input.addEventListener('input', calcularResumen);
+});
+
+// Toggle automóvil
+var checkAuto = document.getElementById('id_tiene_automovil');
+var camposAuto = document.getElementById('campos-auto');
+function toggleAuto() {
+  if (camposAuto) camposAuto.style.display = checkAuto && checkAuto.checked ? '' : 'none';
+}
+if (checkAuto) { checkAuto.addEventListener('change', toggleAuto); toggleAuto(); }
+
+// Toggle inmueble
+var checkInmueble = document.getElementById('id_patrimonio_inmobiliario');
+var camposInmueble = document.getElementById('campos-inmueble');
+function toggleInmueble() {
+  if (camposInmueble) camposInmueble.style.display = checkInmueble && checkInmueble.checked ? '' : 'none';
+}
+if (checkInmueble) { checkInmueble.addEventListener('change', toggleInmueble); toggleInmueble(); }
+
+// Toggle créditos
+var checkCreditos = document.getElementById('id_tiene_creditos');
+var camposCreditos = document.getElementById('campos-creditos');
+function toggleCreditos() {
+  if (camposCreditos) camposCreditos.style.display = checkCreditos && checkCreditos.checked ? '' : 'none';
+}
+if (checkCreditos) { checkCreditos.addEventListener('change', toggleCreditos); toggleCreditos(); }
+
+// Calcular al cargar
+document.addEventListener('DOMContentLoaded', calcularResumen);
+</script>
+{% endblock %}

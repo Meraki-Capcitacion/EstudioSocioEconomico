@@ -12,6 +12,23 @@ class DocumentoListView(LoginRequiredMixin, ListView):
     context_object_name = 'documentos'
     paginate_by = 25
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tipo = self.request.GET.get('tipo', '')
+        verificado = self.request.GET.get('verificado', '')
+        if tipo:
+            qs = qs.filter(tipo=tipo)
+        if verificado == '1':
+            qs = qs.filter(verificado=True)
+        elif verificado == '0':
+            qs = qs.filter(verificado=False)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['tipos_documento'] = Documento.TIPO_DOCUMENTO
+        return ctx
+
 
 class DocumentoDetailView(LoginRequiredMixin, DetailView):
     model = Documento

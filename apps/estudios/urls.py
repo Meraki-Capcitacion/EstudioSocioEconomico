@@ -10,4 +10,5 @@ urlpatterns = [
     path('<int:pk>/', views.EstudioDetailView.as_view(), name='estudio_detail'),
     path('<int:pk>/editar/', views.EstudioUpdateView.as_view(), name='estudio_update'),
     path('<int:pk>/eliminar/', views.EstudioDeleteView.as_view(), name='estudio_delete'),
+    path('<int:pk>/cambiar-estado/', views.CambiarEstadoView.as_view(), name='cambiar_estado'),
 ]

@@ -1,0 +1,158 @@
+{# Componente: confirm_modal.html
+   Uso:
+     {% include 'components/confirm_modal.html' with
+         modal_id="eliminar-persona"
+         modal_title="Eliminar persona"
+         modal_message="¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer."
+         confirm_url=persona.get_delete_url
+         confirm_text="Sí, eliminar"
+         cancel_text="Cancelar"
+     %}
+
+   Variables:
+     modal_id       — ID único del modal (sin espacios)
+     modal_title    — Título que aparece en el encabezado del modal
+     modal_message  — Cuerpo del mensaje de confirmación
+     confirm_url    — URL a la que se enviará el POST al confirmar
+     confirm_text   — Texto del botón de confirmación (default: "Confirmar")
+     cancel_text    — Texto del botón de cancelar (default: "Cancelar")
+
+   El modal se abre programáticamente con:
+     document.getElementById('<modal_id>-overlay').classList.remove('hidden')
+   O con un botón que tenga: onclick="openModal('{{ modal_id }}')"
+#}
+
+<!-- Overlay del modal: {{ modal_id }} -->
+<div id="{{ modal_id }}-overlay"
+     class="fixed inset-0 z-50 hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="{{ modal_id }}-title"
+     aria-describedby="{{ modal_id }}-description">
+
+  <!-- Fondo semitransparente -->
+  <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+       onclick="closeModal('{{ modal_id }}')"
+       aria-hidden="true"></div>
+
+  <!-- Contenido del modal -->
+  <div class="relative flex min-h-full items-center justify-center p-4">
+    <div class="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+
+      <!-- Encabezado -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 id="{{ modal_id }}-title"
+            class="text-base font-semibold text-gray-900">
+          {{ modal_title }}
+        </h2>
+        <button type="button"
+                onclick="closeModal('{{ modal_id }}')"
+                class="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                aria-label="Cerrar modal">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div class="px-6 py-5">
+        <!-- Ícono de advertencia -->
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
+            <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                 aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p id="{{ modal_id }}-description"
+               class="text-sm text-gray-600 leading-relaxed">
+              {{ modal_message }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 bg-gray-50 border-t border-gray-200">
+
+        <!-- Botón cancelar -->
+        <button type="button"
+                onclick="closeModal('{{ modal_id }}')"
+                class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+          {{ cancel_text|default:"Cancelar" }}
+        </button>
+
+        <!-- Formulario de confirmación (POST via HTMX) -->
+        <form method="post"
+              action="{{ confirm_url }}"
+              hx-post="{{ confirm_url }}"
+              hx-target="body"
+              hx-swap="innerHTML"
+              hx-indicator="#{{ modal_id }}-spinner">
+          {% csrf_token %}
+          <button type="submit"
+                  class="relative w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  id="{{ modal_id }}-confirm-btn">
+            <!-- Spinner HTMX -->
+            <span id="{{ modal_id }}-spinner"
+                  class="htmx-indicator absolute inset-0 flex items-center justify-center">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </span>
+            <span class="htmx-hide-when-loading">
+              {{ confirm_text|default:"Confirmar" }}
+            </span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * Abre un modal por su ID base.
+   * @param {string} modalId - El ID base del modal (sin "-overlay")
+   */
+  function openModal(modalId) {
+    const overlay = document.getElementById(modalId + '-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      // Enfocar el botón de confirmar para accesibilidad de teclado
+      const confirmBtn = document.getElementById(modalId + '-confirm-btn');
+      if (confirmBtn) {
+        setTimeout(() => confirmBtn.focus(), 100);
+      }
+    }
+  }
+
+  /**
+   * Cierra un modal por su ID base.
+   * @param {string} modalId - El ID base del modal (sin "-overlay")
+   */
+  function closeModal(modalId) {
+    const overlay = document.getElementById(modalId + '-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Cerrar con tecla Escape
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('[id$="-overlay"]:not(.hidden)').forEach(function(overlay) {
+        const modalId = overlay.id.replace('-overlay', '');
+        closeModal(modalId);
+      });
+    }
+  });
+</script>

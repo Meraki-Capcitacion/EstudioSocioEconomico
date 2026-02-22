@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}{{ persona.nombre_completo }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'personas:persona_list' %}" class="hover:text-purple-600">Personas</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{{ persona.nombre_completo }}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Encabezado de persona -->
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+  <div class="flex items-start gap-4">
+    <!-- Avatar inicial -->
+    <div class="flex-shrink-0 h-14 w-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
+         style="background-color: var(--meraki-purple);">
+      {{ persona.nombre|first|upper }}{{ persona.apellido_paterno|first|upper }}
+    </div>
+    <div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-xl font-bold text-gray-900">{{ persona.nombre_completo }}</h1>
+        {% if not persona.activo %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+          Inactivo
+        </span>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-2 mt-1 flex-wrap">
+        <span class="text-xs font-mono font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
+          {{ persona.folio }}
+        </span>
+        {% if persona.estudios.first %}
+        {% include 'components/badge_estado.html' with estado=persona.estudios.first.estado %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <!-- Botones de acción -->
+  <div class="flex items-center gap-2 flex-wrap">
+    <a href="{% url 'estudios:estudio_create' %}?persona={{ persona.pk }}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+       style="background-color: var(--meraki-purple);"
+       onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+       onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nuevo estudio
+    </a>
+    <a href="{% url 'personas:persona_update' persona.pk %}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+      Editar
+    </a>
+    <a href="{% url 'personas:persona_delete' persona.pk %}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+      Eliminar
+    </a>
+  </div>
+</div>
+
+<!-- Pestañas de navegación -->
+<div class="border-b border-gray-200 mb-6">
+  <nav class="flex gap-0 -mb-px overflow-x-auto" aria-label="Secciones del expediente">
+    <button data-tab="datos"
+            class="tab-btn px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-purple-600 text-purple-700"
+            onclick="cambiarPestana('datos')"
+            aria-selected="true">
+      Datos personales
+    </button>
+    <button data-tab="estudios"
+            class="tab-btn px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            onclick="cambiarPestana('estudios')"
+            aria-selected="false">
+      Estudios
+      {% if persona.estudios.count > 0 %}
+      <span class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-purple-100 text-purple-700">
+        {{ persona.estudios.count }}
+      </span>
+      {% endif %}
+    </button>
+    <button data-tab="domicilios"
+            class="tab-btn px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            onclick="cambiarPestana('domicilios')"
+            aria-selected="false">
+      Domicilios
+      {% if persona.domicilios.count > 0 %}
+      <span class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-purple-100 text-purple-700">
+        {{ persona.domicilios.count }}
+      </span>
+      {% endif %}
+    </button>
+    <button data-tab="documentos"
+            class="tab-btn px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            onclick="cambiarPestana('documentos')"
+            aria-selected="false">
+      Documentos
+      {% if persona.documentos.count > 0 %}
+      <span class="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-purple-100 text-purple-700">
+        {{ persona.documentos.count }}
+      </span>
+      {% endif %}
+    </button>
+  </nav>
+</div>
+
+<!-- Contenido de pestañas -->
+
+<!-- Pestaña: Datos personales -->
+<div id="tab-datos" class="tab-content">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Información básica -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+        Información básica
+      </h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Nombre</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.nombre }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Apellido paterno</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.apellido_paterno }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Apellido materno</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.apellido_materno|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Fecha de nacimiento</dt>
+          <dd class="text-sm text-gray-900 text-right">
+            {% if persona.fecha_nacimiento %}
+              {{ persona.fecha_nacimiento|date:"d \d\e F \d\e Y" }}
+              <span class="text-gray-400 text-xs">({{ persona.fecha_nacimiento|timesince|truncatewords:2 }})</span>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Lugar de nacimiento</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.lugar_nacimiento|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Estado civil</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.get_estado_civil_display|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Dependientes</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.numero_dependientes }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Identificaciones -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+        Identificaciones
+      </h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Tipo de identificación</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.get_tipo_identificacion_display|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Número de identificación</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.numero_identificacion|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">CURP</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.curp|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">RFC</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.rfc|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">NSS</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.nss|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Lic. manejo (folio)</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.licencia_manejo_folio|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Cartilla militar (folio)</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.cartilla_militar_folio|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Acta nacimiento (núm.)</dt>
+          <dd class="text-sm font-mono text-gray-900 text-right">{{ persona.acta_nacimiento_numero|default:"—" }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Contacto -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+        Contacto
+      </h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Correo electrónico</dt>
+          <dd class="text-sm text-gray-900 text-right">
+            {% if persona.email %}
+            <a href="mailto:{{ persona.email }}" class="text-purple-600 hover:underline">{{ persona.email }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Teléfono móvil</dt>
+          <dd class="text-sm text-gray-900 text-right">
+            {% if persona.telefono_movil %}
+            <a href="tel:{{ persona.telefono_movil }}" class="text-purple-600 hover:underline">{{ persona.telefono_movil }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Teléfono fijo</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.telefono_fijo|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Facebook</dt>
+          <dd class="text-sm text-gray-900 text-right">{{ persona.facebook_perfil|default:"—" }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Datos físicos -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+        Datos físicos
+      </h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Peso</dt>
+          <dd class="text-sm text-gray-900 text-right">
+            {% if persona.peso %}{{ persona.peso }} kg{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-2">
+          <dt class="text-xs text-gray-500 font-medium">Estatura</dt>
+          <dd class="text-sm text-gray-900 text-right">
+            {% if persona.estatura %}{{ persona.estatura }} cm{% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+<!-- Pestaña: Estudios -->
+<div id="tab-estudios" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-base font-semibold text-gray-900">Estudios socioeconómicos</h2>
+    <a href="{% url 'estudios:estudio_create' %}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+       style="background-color: var(--meraki-purple);"
+       onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+       onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nuevo estudio
+    </a>
+  </div>
+  {% with estudios=persona.estudios.all %}
+  {% if estudios %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tipo</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">Empresa</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Fecha creación</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for estudio in estudios %}
+        <tr class="hover:bg-purple-50 transition-colors">
+          <td class="px-4 py-3">
+            <span class="text-sm font-medium text-gray-900">{{ estudio.tipo_estudio }}</span>
+          </td>
+          <td class="px-4 py-3">
+            {% include 'components/badge_estado.html' with estado=estudio.estado %}
+          </td>
+          <td class="px-4 py-3 hidden sm:table-cell">
+            <span class="text-sm text-gray-600">{{ estudio.empresa_cliente|default:"—" }}</span>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell">
+            <span class="text-xs text-gray-500">{{ estudio.created_at|date:"d/m/Y" }}</span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'estudios:estudio_detail' estudio.pk %}"
+               class="text-sm font-medium text-purple-600 hover:text-purple-800">
+              Ver detalle
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {% include 'components/empty_state.html' with
+      empty_title="Sin estudios"
+      empty_message="Esta persona no tiene estudios socioeconómicos registrados."
+      empty_action_url=""
+  %}
+  {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Pestaña: Domicilios -->
+<div id="tab-domicilios" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-base font-semibold text-gray-900">Domicilios</h2>
+    <a href="{% url 'domicilios:domicilio_create' %}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+       style="background-color: var(--meraki-purple);"
+       onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+       onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Agregar domicilio
+    </a>
+  </div>
+  {% with domicilios=persona.domicilios.all %}
+  {% if domicilios %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for domicilio in domicilios %}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex justify-between items-start mb-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+          {% if domicilio.tipo == 'ACT' %}bg-green-100 text-green-700
+          {% elif domicilio.tipo == 'ANT' %}bg-gray-100 text-gray-600
+          {% else %}bg-blue-100 text-blue-700{% endif %}">
+          {{ domicilio.get_tipo_display }}
+        </span>
+        <a href="{% url 'domicilios:domicilio_update' domicilio.pk %}"
+           class="text-xs text-purple-600 hover:underline">Editar</a>
+      </div>
+      <p class="text-sm font-medium text-gray-900">
+        {{ domicilio.calle }} {{ domicilio.numero_exterior }}{% if domicilio.numero_interior %} Int. {{ domicilio.numero_interior }}{% endif %}
+      </p>
+      <p class="text-xs text-gray-500 mt-0.5">
+        Col. {{ domicilio.colonia }}, {{ domicilio.municipio }}, {{ domicilio.estado }}
+      </p>
+      <p class="text-xs text-gray-400 mt-0.5">C.P. {{ domicilio.codigo_postal }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  {% include 'components/empty_state.html' with
+      empty_title="Sin domicilios"
+      empty_message="No hay domicilios registrados para esta persona."
+  %}
+  {% endif %}
+  {% endwith %}
+</div>
+
+<!-- Pestaña: Documentos -->
+<div id="tab-documentos" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-base font-semibold text-gray-900">Documentos</h2>
+    <a href="{% url 'documentos:documento_create' %}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+       style="background-color: var(--meraki-purple);"
+       onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+       onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Subir documento
+    </a>
+  </div>
+  {% with documentos=persona.documentos.all %}
+  {% if documentos %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tipo</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for doc in documentos %}
+        <tr class="hover:bg-purple-50 transition-colors">
+          <td class="px-4 py-3">
+            <span class="text-sm text-gray-900">{{ doc.get_tipo_display }}</span>
+          </td>
+          <td class="px-4 py-3">
+            <span class="text-sm text-gray-600">{{ doc.nombre_archivo|default:doc.archivo.name }}</span>
+          </td>
+          <td class="px-4 py-3">
+            {% if doc.verificado %}
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Verificado
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+              Pendiente
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{{ doc.archivo.url }}" target="_blank"
+               class="text-sm font-medium text-purple-600 hover:text-purple-800">
+              Ver
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {% include 'components/empty_state.html' with
+      empty_title="Sin documentos"
+      empty_message="No hay documentos cargados para esta persona."
+  %}
+  {% endif %}
+  {% endwith %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function cambiarPestana(nombrePestana) {
+  // Ocultar todos los contenidos de pestañas
+  document.querySelectorAll('.tab-content').forEach(function(el) {
+    el.classList.add('hidden');
+  });
+
+  // Desactivar todos los botones de pestañas
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.classList.remove('border-purple-600', 'text-purple-700');
+    btn.classList.add('border-transparent', 'text-gray-500');
+    btn.setAttribute('aria-selected', 'false');
+  });
+
+  // Mostrar pestaña activa
+  var contenido = document.getElementById('tab-' + nombrePestana);
+  if (contenido) {
+    contenido.classList.remove('hidden');
+  }
+
+  // Activar botón de pestaña
+  var boton = document.querySelector('[data-tab="' + nombrePestana + '"]');
+  if (boton) {
+    boton.classList.remove('border-transparent', 'text-gray-500');
+    boton.classList.add('border-purple-600', 'text-purple-700');
+    boton.setAttribute('aria-selected', 'true');
+  }
+
+  // Guardar pestaña activa en sessionStorage
+  sessionStorage.setItem('persona-tab-{{ persona.pk }}', nombrePestana);
+}
+
+// Restaurar pestaña activa al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+  var tabGuardada = sessionStorage.getItem('persona-tab-{{ persona.pk }}');
+  if (tabGuardada) {
+    cambiarPestana(tabGuardada);
+  }
+});
+</script>
+{% endblock %}

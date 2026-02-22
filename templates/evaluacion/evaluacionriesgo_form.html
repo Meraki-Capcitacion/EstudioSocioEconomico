@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar evaluación de riesgo{% else %}Registrar evaluación de riesgo{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'evaluacion:evaluacionriesgo_list' %}" class="hover:text-purple-600">Evaluaciones</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">{% if form.instance.pk %}Editar{% else %}Nueva evaluación{% endif %}</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if form.instance.pk %}Editar evaluación de riesgo{% else %}Registrar evaluación de riesgo{% endif %}
+    </h1>
+    <p class="text-sm text-gray-500 mt-0.5">Asigna una puntuación del 0 al 100 a cada categoría. El score final se calcula automáticamente.</p>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200" role="alert">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+      <!-- Puntuaciones -->
+      <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-gray-800 mb-5 pb-2 border-b border-gray-100">Puntuaciones por categoría</h2>
+
+        <div class="mb-4">
+          {% include 'components/form_field.html' with field=form.estudio %}
+        </div>
+        <div class="mb-5">
+          {% include 'components/form_field.html' with field=form.evaluador %}
+        </div>
+
+        <!-- Slider: Identificación -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_identificacion" class="text-sm font-medium text-gray-700">Identificación oficial</label>
+            <span id="val-identificacion" class="text-sm font-bold text-purple-700">{{ form.puntuacion_identificacion.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_identificacion" name="puntuacion_identificacion"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_identificacion.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('identificacion', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+          {% if form.puntuacion_identificacion.errors %}
+          <p class="text-xs text-red-600 mt-1">{{ form.puntuacion_identificacion.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Slider: Domicilio -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_domicilio" class="text-sm font-medium text-gray-700">Domicilio</label>
+            <span id="val-domicilio" class="text-sm font-bold text-purple-700">{{ form.puntuacion_domicilio.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_domicilio" name="puntuacion_domicilio"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_domicilio.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('domicilio', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+
+        <!-- Slider: Laboral -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_laboral" class="text-sm font-medium text-gray-700">Laboral</label>
+            <span id="val-laboral" class="text-sm font-bold text-purple-700">{{ form.puntuacion_laboral.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_laboral" name="puntuacion_laboral"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_laboral.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('laboral', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+
+        <!-- Slider: Económica -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_economica" class="text-sm font-medium text-gray-700">Económica</label>
+            <span id="val-economica" class="text-sm font-bold text-purple-700">{{ form.puntuacion_economica.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_economica" name="puntuacion_economica"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_economica.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('economica', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+
+        <!-- Slider: Crediticia -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_crediticia" class="text-sm font-medium text-gray-700">Crediticia</label>
+            <span id="val-crediticia" class="text-sm font-bold text-purple-700">{{ form.puntuacion_crediticia.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_crediticia" name="puntuacion_crediticia"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_crediticia.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('crediticia', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+
+        <!-- Slider: Referencias -->
+        <div class="mb-2">
+          <div class="flex justify-between items-center mb-1.5">
+            <label for="id_puntuacion_referencias" class="text-sm font-medium text-gray-700">Referencias</label>
+            <span id="val-referencias" class="text-sm font-bold text-purple-700">{{ form.puntuacion_referencias.value|default:0 }}</span>
+          </div>
+          <input type="range" id="id_puntuacion_referencias" name="puntuacion_referencias"
+                 min="0" max="100" step="1"
+                 value="{{ form.puntuacion_referencias.value|default:0 }}"
+                 class="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                 style="accent-color: var(--meraki-purple);"
+                 oninput="actualizarSlider('referencias', this.value)">
+          <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+      </div>
+
+      <!-- Score final y nivel de riesgo -->
+      <div class="space-y-4">
+        <!-- Score calculado -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 text-center sticky top-20">
+          <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2">Score final (promedio)</p>
+          <div id="display-score"
+               class="text-5xl font-bold mb-2 transition-all"
+               style="color: var(--meraki-purple);">
+            0
+          </div>
+          <p class="text-xs text-gray-400 mb-4">de 100 puntos</p>
+
+          <!-- Badge de nivel de riesgo -->
+          <div id="display-nivel" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 mb-4">
+            Sin calcular
+          </div>
+
+          <!-- Campo oculto para score_final -->
+          <input type="hidden" id="id_score_final" name="score_final" value="{{ form.score_final.value|default:'' }}">
+
+          <!-- Select visible para nivel_riesgo (actualizado por JS) -->
+          <div class="mt-3">
+            <label class="block text-xs text-gray-500 font-medium mb-1.5">Nivel de riesgo</label>
+            {{ form.nivel_riesgo }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Factores y recomendación -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+      <h2 class="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Análisis cualitativo</h2>
+      <div class="space-y-0">
+        {% include 'components/form_field.html' with field=form.factores_riesgo %}
+        {% include 'components/form_field.html' with field=form.factores_atenuantes %}
+        {% include 'components/form_field.html' with field=form.recomendacion_final %}
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3">
+      <a href="{% url 'evaluacion:evaluacionriesgo_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        {% if form.instance.pk %}Guardar evaluación{% else %}Registrar evaluación{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var categorias = ['identificacion', 'domicilio', 'laboral', 'economica', 'crediticia', 'referencias'];
+
+function actualizarSlider(categoria, valor) {
+  document.getElementById('val-' + categoria).textContent = valor;
+  calcularScore();
+}
+
+function calcularScore() {
+  var total = 0;
+  var n = 0;
+  categorias.forEach(function(cat) {
+    var input = document.getElementById('id_puntuacion_' + cat);
+    if (input) {
+      total += parseFloat(input.value || 0);
+      n++;
+    }
+  });
+
+  var score = n > 0 ? Math.round(total / n) : 0;
+
+  document.getElementById('id_score_final').value = score;
+  document.getElementById('display-score').textContent = score;
+
+  var displayNivel = document.getElementById('display-nivel');
+  var selectNivel = document.getElementById('id_nivel_riesgo');
+  var nivelCodigo, nivelTexto, claseColor;
+
+  if (score >= 80) {
+    nivelCodigo = 'BAJ'; nivelTexto = 'Riesgo bajo'; claseColor = 'bg-green-100 text-green-800';
+  } else if (score >= 60) {
+    nivelCodigo = 'MED'; nivelTexto = 'Riesgo medio'; claseColor = 'bg-yellow-100 text-yellow-800';
+  } else if (score >= 40) {
+    nivelCodigo = 'ALT'; nivelTexto = 'Riesgo alto'; claseColor = 'bg-orange-100 text-orange-800';
+  } else {
+    nivelCodigo = 'CRI'; nivelTexto = 'Riesgo crítico'; claseColor = 'bg-red-100 text-red-800';
+  }
+
+  displayNivel.textContent = nivelTexto;
+  displayNivel.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ' + claseColor;
+
+  if (selectNivel) selectNivel.value = nivelCodigo;
+
+  // Actualizar color del score
+  var display = document.getElementById('display-score');
+  if (score >= 80) display.style.color = '#15803d';
+  else if (score >= 60) display.style.color = '#b45309';
+  else if (score >= 40) display.style.color = '#ea580c';
+  else display.style.color = '#dc2626';
+}
+
+// Asociar sliders con función de cálculo
+categorias.forEach(function(cat) {
+  var input = document.getElementById('id_puntuacion_' + cat);
+  if (input) input.addEventListener('input', calcularScore);
+});
+
+document.addEventListener('DOMContentLoaded', calcularScore);
+</script>
+{% endblock %}
