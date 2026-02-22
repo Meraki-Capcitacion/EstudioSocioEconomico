@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
@@ -6,17 +7,18 @@ from django.views.generic import (
 from .models import EvaluacionRiesgo
 
 
-class EvaluacionRiesgoListView(ListView):
+class EvaluacionRiesgoListView(LoginRequiredMixin, ListView):
     model = EvaluacionRiesgo
     context_object_name = 'evaluaciones'
+    paginate_by = 25
 
 
-class EvaluacionRiesgoDetailView(DetailView):
+class EvaluacionRiesgoDetailView(LoginRequiredMixin, DetailView):
     model = EvaluacionRiesgo
     context_object_name = 'evaluacion'
 
 
-class EvaluacionRiesgoCreateView(CreateView):
+class EvaluacionRiesgoCreateView(LoginRequiredMixin, CreateView):
     model = EvaluacionRiesgo
     fields = [
         'estudio', 'evaluador',
@@ -28,8 +30,13 @@ class EvaluacionRiesgoCreateView(CreateView):
     ]
     success_url = reverse_lazy('evaluacion:evaluacionriesgo_list')
 
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EvaluacionRiesgoUpdateView(UpdateView):
+
+class EvaluacionRiesgoUpdateView(LoginRequiredMixin, UpdateView):
     model = EvaluacionRiesgo
     fields = [
         'estudio', 'evaluador',
@@ -41,8 +48,12 @@ class EvaluacionRiesgoUpdateView(UpdateView):
     ]
     success_url = reverse_lazy('evaluacion:evaluacionriesgo_list')
 
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EvaluacionRiesgoDeleteView(DeleteView):
+
+class EvaluacionRiesgoDeleteView(LoginRequiredMixin, DeleteView):
     model = EvaluacionRiesgo
     context_object_name = 'evaluacion'
     success_url = reverse_lazy('evaluacion:evaluacionriesgo_list')

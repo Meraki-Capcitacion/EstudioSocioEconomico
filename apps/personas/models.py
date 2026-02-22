@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.utils import timezone
 
 from apps.configuracion.models import TimestampModel
@@ -13,6 +13,7 @@ class Persona(TimestampModel):
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)
     fecha_nacimiento = models.DateField()
+    lugar_nacimiento = models.CharField(max_length=200, blank=True, verbose_name='Lugar de nacimiento')
 
     # Identificación oficial
     TIPO_IDENTIFICACION = [
@@ -26,11 +27,16 @@ class Persona(TimestampModel):
     numero_identificacion = models.CharField(max_length=50)
     curp = models.CharField(max_length=18, validators=[RegexValidator(r'^[A-Z0-9]{18}$', 'CURP inválida')])
     rfc = models.CharField(max_length=13, blank=True, validators=[RegexValidator(r'^[A-Z&Ñ]{4}\d{6}[A-Z0-9]{3}$', 'RFC inválido')])
+    nss = models.CharField(max_length=11, blank=True, verbose_name='NSS (Número de Seguridad Social)')
+    licencia_manejo_folio = models.CharField(max_length=50, blank=True, verbose_name='Folio de licencia de manejo')
+    cartilla_militar_folio = models.CharField(max_length=50, blank=True, verbose_name='Folio de cartilla militar')
+    acta_nacimiento_numero = models.CharField(max_length=50, blank=True, verbose_name='Número de acta de nacimiento')
 
     # Contacto
     email = models.EmailField()
     telefono_movil = models.CharField(max_length=15)
     telefono_fijo = models.CharField(max_length=15, blank=True)
+    facebook_perfil = models.CharField(max_length=200, blank=True, verbose_name='Perfil de Facebook')
 
     # Estado civil y familia
     ESTADO_CIVIL = [
@@ -40,9 +46,39 @@ class Persona(TimestampModel):
         ('DIV', 'Divorciado/a'),
         ('VIU', 'Viudo/a'),
         ('SEP', 'Separado/a'),
+        ('OTR', 'Otro'),
     ]
     estado_civil = models.CharField(max_length=3, choices=ESTADO_CIVIL)
     numero_dependientes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    # Datos físicos
+    peso = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Peso (kg)',
+        validators=[MinValueValidator(0), MaxValueValidator(999)]
+    )
+    estatura = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Estatura (cm)',
+        validators=[MinValueValidator(0), MaxValueValidator(999)]
+    )
+
+    # Historial y contexto personal
+    historial_residencias = models.TextField(
+        blank=True,
+        verbose_name='Historial de residencias anteriores',
+        help_text='Lugar, período (año inicio-fin) y motivo del cambio de residencia'
+    )
+    periodos_sin_laborar = models.TextField(
+        blank=True,
+        verbose_name='Períodos sin laborar',
+        help_text='Período (mes/año inicio-fin) y actividad durante ese tiempo'
+    )
+    actividades_tiempo_libre = models.TextField(
+        blank=True,
+        verbose_name='Actividades en tiempo libre',
+        help_text='Tipo de actividad, frecuencia y tiempo dedicado'
+    )
 
     # Campos de auditoría
     activo = models.BooleanField(default=True)
@@ -80,3 +116,41 @@ class Persona(TimestampModel):
 
     def __str__(self):
         return f"{self.folio} - {self.nombre_completo}"
+
+
+class SaludPersona(TimestampModel):
+    """Información de salud de la persona evaluada"""
+    persona = models.OneToOneField(Persona, on_delete=models.CASCADE, related_name='salud')
+
+    NIVEL_SALUD = [
+        ('EXC', 'Excelente'),
+        ('BUE', 'Buena'),
+        ('REG', 'Regular'),
+        ('MAL', 'Mala'),
+    ]
+    nivel_salud = models.CharField(
+        max_length=3, choices=NIVEL_SALUD, blank=True,
+        verbose_name='Estado de salud general'
+    )
+    enfermedades_cronicas = models.TextField(
+        blank=True,
+        verbose_name='Enfermedades crónicas / condiciones médicas / alergias / discapacidad',
+        help_text='Especificar enfermedad y tratamiento que lleva'
+    )
+    antecedentes_familiares = models.TextField(
+        blank=True,
+        verbose_name='Antecedentes de enfermedades familiares',
+        help_text='Enfermedades y familiar(es) que las han padecido'
+    )
+    consumo_sustancias = models.TextField(
+        blank=True,
+        verbose_name='Consumo de sustancias',
+        help_text='Bebidas alcohólicas, tabaco, medicamentos sin prescripción, estupefacientes u otros; indicar frecuencia'
+    )
+
+    class Meta:
+        verbose_name = "Salud de persona"
+        verbose_name_plural = "Salud de personas"
+
+    def __str__(self):
+        return f"Salud de {self.persona.nombre_completo}"

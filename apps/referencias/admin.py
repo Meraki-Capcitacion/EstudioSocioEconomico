@@ -26,6 +26,11 @@ class ReferenciaAdmin(admin.ModelAdmin):
                        'parentesco_o_relacion', 'tiempo_conocer_anios',
                        'domicilio'),
         }),
+        ('Información capturada al contactar', {
+            'fields': ('actividad_tiempo_libre', 'lugares_laborado',
+                       'conducta', 'cualidades'),
+            'classes': ('collapse',),
+        }),
         ('Verificación', {
             'fields': ('verificada', 'fecha_verificacion',
                        'comentarios_verificacion'),

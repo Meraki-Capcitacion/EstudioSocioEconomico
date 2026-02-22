@@ -5,17 +5,20 @@ from .models import SituacionEconomica
 
 @admin.register(SituacionEconomica)
 class SituacionEconomicaAdmin(admin.ModelAdmin):
-    list_display = ('estudio', 'salario_mensual',
-                    'get_ingreso_total', 'get_egreso_total',
-                    'get_capacidad_ahorro')
+    list_display = ('estudio', 'situacion_economica_percibida',
+                    'salario_mensual', 'get_ingreso_total',
+                    'get_egreso_total', 'get_capacidad_ahorro')
+    list_filter = ('situacion_economica_percibida', 'tiene_automovil',
+                   'tiene_creditos', 'automovil_con_adeudo')
     search_fields = ('estudio__persona__folio',
-                     'estudio__persona__nombre')
+                     'estudio__persona__nombre',
+                     'institucion_bancaria', 'afore')
     raw_id_fields = ('estudio',)
     list_per_page = 25
 
     fieldsets = (
         ('Estudio', {
-            'fields': ('estudio',),
+            'fields': ('estudio', 'situacion_economica_percibida'),
         }),
         ('Ingresos', {
             'fields': ('salario_mensual', 'bonos_comisiones',
@@ -29,16 +32,23 @@ class SituacionEconomicaAdmin(admin.ModelAdmin):
                        'gasto_deudas', 'otros_gastos',
                        'descripcion_otros_gastos'),
         }),
-        ('Patrimonio', {
+        ('Patrimonio — Automóvil', {
             'fields': ('tiene_automovil', 'automovil_marca_modelo',
-                       'automovil_anio', 'patrimonio_inmobiliario',
-                       'descripcion_patrimonio'),
+                       'automovil_anio', 'automovil_valor_comercial',
+                       'automovil_con_adeudo'),
+        }),
+        ('Patrimonio — Inmueble', {
+            'fields': ('patrimonio_inmobiliario', 'descripcion_patrimonio'),
+        }),
+        ('Cuenta bancaria y AFORE', {
+            'fields': ('institucion_bancaria', 'afore'),
         }),
         ('Créditos y deudas', {
             'fields': ('tiene_creditos', 'credito_hipotecario',
                        'credito_automotriz', 'tarjetas_credito',
-                       'prestamos_personales', 'otros_creditos',
-                       'descripcion_otros_creditos'),
+                       'tarjeta_credito_banco', 'tienda_departamental_nombre',
+                       'tienda_departamental_adeudo', 'prestamos_personales',
+                       'otros_creditos', 'descripcion_otros_creditos'),
         }),
     )
 

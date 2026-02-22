@@ -11,6 +11,22 @@ class TimestampModel(models.Model):
     class Meta:
         abstract = True
 
+class EmpresaCliente(models.Model):
+    """Empresa o cliente que solicita el estudio socioeconómico"""
+    nombre = models.CharField(max_length=200)
+    logo = models.ImageField(upload_to='empresas/logos/', null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Empresa cliente"
+        verbose_name_plural = "Empresas clientes"
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class TipoEstudio(models.Model):
     """Catálogo de tipos de estudio socioeconómico"""
     nombre = models.CharField(max_length=100)

@@ -34,6 +34,10 @@ class VisitaDomiciliaria(TimestampModel):
 
     # Comentarios
     observaciones_generales = models.TextField(blank=True)
+    comentarios_colonos = models.TextField(
+        blank=True,
+        verbose_name='Comentarios de vecinos / colonos'
+    )
     recomendacion = models.TextField(blank=True)
 
     class Meta:

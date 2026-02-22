@@ -1,36 +1,38 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
 )
 
-from .models import NivelEducativo, Educacion
+from .models import NivelEducativo, Educacion, Idioma
 
 
 # --- NivelEducativo ---
 
-class NivelEducativoListView(ListView):
+class NivelEducativoListView(LoginRequiredMixin, ListView):
     model = NivelEducativo
     context_object_name = 'niveles_educativos'
+    paginate_by = 25
 
 
-class NivelEducativoDetailView(DetailView):
+class NivelEducativoDetailView(LoginRequiredMixin, DetailView):
     model = NivelEducativo
     context_object_name = 'nivel_educativo'
 
 
-class NivelEducativoCreateView(CreateView):
+class NivelEducativoCreateView(LoginRequiredMixin, CreateView):
     model = NivelEducativo
     fields = ['nivel', 'orden', 'activo']
     success_url = reverse_lazy('educacion:niveleducativo_list')
 
 
-class NivelEducativoUpdateView(UpdateView):
+class NivelEducativoUpdateView(LoginRequiredMixin, UpdateView):
     model = NivelEducativo
     fields = ['nivel', 'orden', 'activo']
     success_url = reverse_lazy('educacion:niveleducativo_list')
 
 
-class NivelEducativoDeleteView(DeleteView):
+class NivelEducativoDeleteView(LoginRequiredMixin, DeleteView):
     model = NivelEducativo
     context_object_name = 'nivel_educativo'
     success_url = reverse_lazy('educacion:niveleducativo_list')
@@ -38,37 +40,99 @@ class NivelEducativoDeleteView(DeleteView):
 
 # --- Educacion ---
 
-class EducacionListView(ListView):
+class EducacionListView(LoginRequiredMixin, ListView):
     model = Educacion
     context_object_name = 'educaciones'
+    paginate_by = 25
 
 
-class EducacionDetailView(DetailView):
+class EducacionDetailView(LoginRequiredMixin, DetailView):
     model = Educacion
     context_object_name = 'educacion'
 
 
-class EducacionCreateView(CreateView):
+class EducacionCreateView(LoginRequiredMixin, CreateView):
     model = Educacion
     fields = [
-        'persona', 'nivel', 'institucion', 'titulo', 'estado',
-        'anio_inicio', 'anio_fin',
-        'tiene_cedula', 'numero_cedula', 'documento_verificado',
+        'persona', 'nivel', 'institucion', 'ciudad_institucion',
+        'titulo', 'estado', 'anio_inicio', 'anio_fin',
+        'tipo_documento_estudio', 'tiene_cedula', 'numero_cedula',
+        'documento_verificado',
     ]
     success_url = reverse_lazy('educacion:educacion_list')
 
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EducacionUpdateView(UpdateView):
+
+class EducacionUpdateView(LoginRequiredMixin, UpdateView):
     model = Educacion
     fields = [
-        'persona', 'nivel', 'institucion', 'titulo', 'estado',
-        'anio_inicio', 'anio_fin',
-        'tiene_cedula', 'numero_cedula', 'documento_verificado',
+        'persona', 'nivel', 'institucion', 'ciudad_institucion',
+        'titulo', 'estado', 'anio_inicio', 'anio_fin',
+        'tipo_documento_estudio', 'tiene_cedula', 'numero_cedula',
+        'documento_verificado',
     ]
     success_url = reverse_lazy('educacion:educacion_list')
 
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EducacionDeleteView(DeleteView):
+
+class EducacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Educacion
     context_object_name = 'educacion'
     success_url = reverse_lazy('educacion:educacion_list')
+
+
+# --- Idioma ---
+
+class IdiomaListView(LoginRequiredMixin, ListView):
+    model = Idioma
+    context_object_name = 'idiomas'
+    paginate_by = 25
+
+
+class IdiomaDetailView(LoginRequiredMixin, DetailView):
+    model = Idioma
+    context_object_name = 'idioma'
+
+
+class IdiomaCreateView(LoginRequiredMixin, CreateView):
+    model = Idioma
+    fields = [
+        'persona', 'idioma',
+        'porcentaje_habla', 'porcentaje_escribe', 'porcentaje_lee',
+        'plantel', 'periodo_inicio', 'periodo_fin',
+        'tiene_certificacion', 'tipo_certificacion', 'nivel_certificacion',
+    ]
+    success_url = reverse_lazy('educacion:idioma_list')
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
+
+
+class IdiomaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Idioma
+    fields = [
+        'persona', 'idioma',
+        'porcentaje_habla', 'porcentaje_escribe', 'porcentaje_lee',
+        'plantel', 'periodo_inicio', 'periodo_fin',
+        'tiene_certificacion', 'tipo_certificacion', 'nivel_certificacion',
+    ]
+    success_url = reverse_lazy('educacion:idioma_list')
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
+
+
+class IdiomaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Idioma
+    context_object_name = 'idioma'
+    success_url = reverse_lazy('educacion:idioma_list')

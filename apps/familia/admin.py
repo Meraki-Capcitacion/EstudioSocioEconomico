@@ -6,12 +6,12 @@ from .models import GrupoFamiliar
 @admin.register(GrupoFamiliar)
 class GrupoFamiliarAdmin(admin.ModelAdmin):
     list_display = ('persona', 'nombre_completo', 'parentesco',
-                    'edad', 'tipo_dependencia',
+                    'edad', 'telefono', 'tipo_dependencia',
                     'vive_en_domicilio', 'aporta_ingreso',
                     'monto_aportacion')
     list_filter = ('tipo_dependencia', 'vive_en_domicilio', 'aporta_ingreso')
     search_fields = ('persona__folio', 'persona__nombre',
-                     'nombre_completo', 'parentesco')
+                     'nombre_completo', 'parentesco', 'telefono')
     raw_id_fields = ('persona',)
     readonly_fields = ('created_at', 'updated_at',
                        'created_by', 'updated_by')
@@ -23,11 +23,12 @@ class GrupoFamiliarAdmin(admin.ModelAdmin):
         }),
         ('Datos del familiar', {
             'fields': ('nombre_completo', 'parentesco', 'edad',
-                       'ocupacion', 'escolaridad'),
+                       'ocupacion', 'escolaridad', 'telefono'),
         }),
-        ('Dependencia', {
+        ('Residencia y dependencia', {
             'fields': ('tipo_dependencia', 'vive_en_domicilio',
-                       'aporta_ingreso', 'monto_aportacion'),
+                       'ciudad_residencia', 'aporta_ingreso',
+                       'monto_aportacion'),
         }),
         ('Auditoría', {
             'fields': ('created_at', 'updated_at',

@@ -35,7 +35,8 @@ class VisitaDomiciliariaAdmin(admin.ModelAdmin):
                        'nivel_ruido', 'acceso_transporte'),
         }),
         ('Comentarios', {
-            'fields': ('observaciones_generales', 'recomendacion'),
+            'fields': ('observaciones_generales', 'comentarios_colonos',
+                       'recomendacion'),
         }),
         ('Auditoría', {
             'fields': ('created_at', 'updated_at',

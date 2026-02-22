@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
@@ -6,37 +7,51 @@ from django.views.generic import (
 from .models import EstudioSocioeconomico
 
 
-class EstudioListView(ListView):
+class EstudioListView(LoginRequiredMixin, ListView):
     model = EstudioSocioeconomico
     context_object_name = 'estudios'
+    paginate_by = 25
 
 
-class EstudioDetailView(DetailView):
+class EstudioDetailView(LoginRequiredMixin, DetailView):
     model = EstudioSocioeconomico
     context_object_name = 'estudio'
 
 
-class EstudioCreateView(CreateView):
+class EstudioCreateView(LoginRequiredMixin, CreateView):
     model = EstudioSocioeconomico
     fields = [
-        'persona', 'tipo_estudio', 'estado',
+        'persona', 'empresa_cliente', 'tipo_estudio', 'estado',
         'fecha_programada_visita', 'fecha_realizacion', 'fecha_aprobacion',
-        'observaciones', 'conclusion', 'puntuacion_total',
+        'observaciones', 'conclusion', 'aspectos_positivos', 'aspectos_negativos',
+        'expectativas_salariales', 'medio_enterado_vacante',
+        'tiempo_traslado', 'comentarios_adicionales',
     ]
     success_url = reverse_lazy('estudios:estudio_list')
 
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EstudioUpdateView(UpdateView):
+
+class EstudioUpdateView(LoginRequiredMixin, UpdateView):
     model = EstudioSocioeconomico
     fields = [
-        'persona', 'tipo_estudio', 'estado',
+        'persona', 'empresa_cliente', 'tipo_estudio', 'estado',
         'fecha_programada_visita', 'fecha_realizacion', 'fecha_aprobacion',
-        'observaciones', 'conclusion', 'puntuacion_total',
+        'observaciones', 'conclusion', 'aspectos_positivos', 'aspectos_negativos',
+        'expectativas_salariales', 'medio_enterado_vacante',
+        'tiempo_traslado', 'comentarios_adicionales',
     ]
     success_url = reverse_lazy('estudios:estudio_list')
 
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class EstudioDeleteView(DeleteView):
+
+class EstudioDeleteView(LoginRequiredMixin, DeleteView):
     model = EstudioSocioeconomico
     context_object_name = 'estudio'
     success_url = reverse_lazy('estudios:estudio_list')

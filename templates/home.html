@@ -1,10 +1,134 @@
 {% extends "base.html" %}
 
-{% block title %}Inicio — Estudio Socioeconómico{% endblock %}
+{% block title %}Inicio{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500">
+    Inicio
+  </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <h1 class="text-3xl font-bold text-gray-800 mb-4">Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
-    <p class="text-gray-600">Panel principal del sistema de estudios socioeconómicos.</p>
+<h1 class="text-2xl font-bold text-gray-900 mb-1">
+  Bienvenido, {{ user.get_full_name|default:user.username }}
+</h1>
+<p class="text-sm text-gray-500 mb-6">Panel de control del sistema de estudios socioeconómicos</p>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4" style="border-left-color: var(--meraki-purple);">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</p>
+    <p class="mt-1 text-3xl font-bold text-purple-600">{{ total_personas|default:"—" }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4" style="border-left-color: var(--meraki-purple);">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Estudios totales</p>
+    <p class="mt-1 text-3xl font-bold text-purple-600">{{ total_estudios|default:"—" }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-yellow-400">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">En proceso</p>
+    <p class="mt-1 text-3xl font-bold text-yellow-500">{{ estudios_en_proceso|default:"—" }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-green-400">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Aprobados</p>
+    <p class="mt-1 text-3xl font-bold text-green-500">{{ estudios_aprobados|default:"—" }}</p>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+  <a href="{% url 'personas:persona_create' %}"
+     class="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm
+            hover:border-purple-400 hover:shadow-md transition-all">
+    <span class="text-2xl">&#128100;</span>
+    <div>
+      <p class="font-semibold text-gray-800 text-sm">Nueva persona</p>
+      <p class="text-xs text-gray-500">Registrar candidato</p>
+    </div>
+  </a>
+  <a href="{% url 'estudios:estudio_create' %}"
+     class="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm
+            hover:border-purple-400 hover:shadow-md transition-all">
+    <span class="text-2xl">&#128203;</span>
+    <div>
+      <p class="font-semibold text-gray-800 text-sm">Nuevo estudio</p>
+      <p class="text-xs text-gray-500">Crear estudio socioeconómico</p>
+    </div>
+  </a>
+  <a href="{% url 'visitas:visitadomiciliaria_create' %}"
+     class="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm
+            hover:border-purple-400 hover:shadow-md transition-all">
+    <span class="text-2xl">&#127968;</span>
+    <div>
+      <p class="font-semibold text-gray-800 text-sm">Registrar visita</p>
+      <p class="text-xs text-gray-500">Visita domiciliaria</p>
+    </div>
+  </a>
+</div>
+
+<!-- Modules -->
+<h2 class="text-base font-semibold text-gray-700 mb-3">Módulos del sistema</h2>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+  <a href="{% url 'personas:persona_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Personas
+  </a>
+  <a href="{% url 'estudios:estudio_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Estudios
+  </a>
+  <a href="{% url 'domicilios:domicilio_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Domicilios
+  </a>
+  <a href="{% url 'laboral:historiallaboral_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Historial laboral
+  </a>
+  <a href="{% url 'educacion:educacion_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Educación
+  </a>
+  <a href="{% url 'familia:grupofamiliar_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Familia
+  </a>
+  <a href="{% url 'referencias:referencia_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Referencias
+  </a>
+  <a href="{% url 'economia:situacioneconomica_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Economía
+  </a>
+  <a href="{% url 'visitas:visitadomiciliaria_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Visitas
+  </a>
+  <a href="{% url 'evaluacion:evaluacionriesgo_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Evaluaciones
+  </a>
+  <a href="{% url 'documentos:documento_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Documentos
+  </a>
+  <a href="{% url 'notificaciones:notificacion_list' %}"
+     class="bg-white border border-gray-200 rounded-lg p-4 text-center text-sm font-medium
+            text-gray-700 hover:border-purple-400 hover:text-purple-600 transition-colors shadow-sm">
+    Notificaciones
+  </a>
 </div>
 {% endblock %}

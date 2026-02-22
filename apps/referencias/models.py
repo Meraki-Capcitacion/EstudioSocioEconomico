@@ -26,6 +26,24 @@ class Referencia(TimestampModel):
 
     domicilio = models.TextField(blank=True)
 
+    # Información capturada al contactar la referencia
+    actividad_tiempo_libre = models.TextField(
+        blank=True,
+        verbose_name='Actividades que realiza en su tiempo libre (según referencia)'
+    )
+    lugares_laborado = models.TextField(
+        blank=True,
+        verbose_name='Lugares donde ha laborado (según referencia)'
+    )
+    conducta = models.TextField(
+        blank=True,
+        verbose_name='Conducta observada (según referencia)'
+    )
+    cualidades = models.TextField(
+        blank=True,
+        verbose_name='Cualidades destacadas (según referencia)'
+    )
+
     verificada = models.BooleanField(default=False)
     fecha_verificacion = models.DateTimeField(null=True, blank=True)
     comentarios_verificacion = models.TextField(blank=True)

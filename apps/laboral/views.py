@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
@@ -6,17 +7,18 @@ from django.views.generic import (
 from .models import HistorialLaboral
 
 
-class HistorialLaboralListView(ListView):
+class HistorialLaboralListView(LoginRequiredMixin, ListView):
     model = HistorialLaboral
     context_object_name = 'historiales_laborales'
+    paginate_by = 25
 
 
-class HistorialLaboralDetailView(DetailView):
+class HistorialLaboralDetailView(LoginRequiredMixin, DetailView):
     model = HistorialLaboral
     context_object_name = 'historial_laboral'
 
 
-class HistorialLaboralCreateView(CreateView):
+class HistorialLaboralCreateView(LoginRequiredMixin, CreateView):
     model = HistorialLaboral
     fields = [
         'persona', 'empresa', 'puesto', 'telefono_empresa',
@@ -27,8 +29,13 @@ class HistorialLaboralCreateView(CreateView):
     ]
     success_url = reverse_lazy('laboral:historiallaboral_list')
 
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class HistorialLaboralUpdateView(UpdateView):
+
+class HistorialLaboralUpdateView(LoginRequiredMixin, UpdateView):
     model = HistorialLaboral
     fields = [
         'persona', 'empresa', 'puesto', 'telefono_empresa',
@@ -39,8 +46,12 @@ class HistorialLaboralUpdateView(UpdateView):
     ]
     success_url = reverse_lazy('laboral:historiallaboral_list')
 
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        return super().form_valid(form)
 
-class HistorialLaboralDeleteView(DeleteView):
+
+class HistorialLaboralDeleteView(LoginRequiredMixin, DeleteView):
     model = HistorialLaboral
     context_object_name = 'historial_laboral'
     success_url = reverse_lazy('laboral:historiallaboral_list')
