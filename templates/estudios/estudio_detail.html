@@ -124,6 +124,7 @@
     <button data-tab="familia" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('familia')" aria-selected="false">Familia</button>
     <button data-tab="laboral" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('laboral')" aria-selected="false">Laboral</button>
     <button data-tab="economico" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('economico')" aria-selected="false">Económico</button>
+    <button data-tab="referencias" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('referencias')" aria-selected="false">Referencias</button>
     <button data-tab="visitas" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('visitas')" aria-selected="false">Visitas</button>
     <button data-tab="documentos" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('documentos')" aria-selected="false">Documentos</button>
     <button data-tab="evaluacion" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('evaluacion')" aria-selected="false">Evaluación</button>
@@ -285,7 +286,7 @@
           {% else %}bg-blue-100 text-blue-700{% endif %}">
           {{ domicilio.get_tipo_display }}
         </span>
-        <a href="{% url 'domicilios:domicilio_update' domicilio.pk %}"
+        <a href="{% url 'domicilios:domicilio_update' domicilio.pk %}?back={{ estudio.pk }}"
            class="text-xs text-purple-600 hover:underline">Editar</a>
       </div>
       <p class="text-sm font-semibold text-gray-900">
@@ -379,7 +380,7 @@
             {% endif %}
           </td>
           <td class="px-4 py-3 text-right">
-            <a href="{% url 'educacion:educacion_update' edu.pk %}"
+            <a href="{% url 'educacion:educacion_update' edu.pk %}?back={{ estudio.pk }}"
                class="text-xs text-purple-600 hover:underline">Editar</a>
           </td>
         </tr>
@@ -456,7 +457,7 @@
       Agregar familiar
     </a>
   </div>
-  {% with familia=estudio.persona.familia.all %}
+  {% with familia=estudio.persona.grupo_familiar.all %}
   {% if familia %}
   <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
@@ -493,7 +494,7 @@
             {% endif %}
           </td>
           <td class="px-4 py-3 text-right">
-            <a href="{% url 'familia:grupofamiliar_update' miembro.pk %}"
+            <a href="{% url 'familia:grupofamiliar_update' miembro.pk %}?back={{ estudio.pk }}"
                class="text-xs text-purple-600 hover:underline">Editar</a>
           </td>
         </tr>
@@ -522,7 +523,7 @@
       Agregar empleo
     </a>
   </div>
-  {% with laboral=estudio.persona.laboral.all %}
+  {% with laboral=estudio.persona.historial_laboral.all %}
   {% if laboral %}
   <div class="space-y-3">
     {% for trabajo in laboral %}
@@ -551,7 +552,7 @@
             {% if trabajo.es_trabajo_actual %}Presente{% elif trabajo.fecha_fin %}{{ trabajo.fecha_fin|date:"M Y" }}{% else %}—{% endif %}
           </p>
         </div>
-        <a href="{% url 'laboral:historiallaboral_update' trabajo.pk %}"
+        <a href="{% url 'laboral:historiallaboral_update' trabajo.pk %}?back={{ estudio.pk }}"
            class="text-xs text-purple-600 hover:underline flex-shrink-0">Editar</a>
       </div>
       {% if trabajo.salario_inicial or trabajo.salario_final %}
@@ -583,7 +584,7 @@
 <div id="tab-economico" class="tab-content hidden">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-base font-semibold text-gray-900">Situación económica</h2>
-    {% if not estudio.situacioneconomica %}
+    {% if not estudio.situacion_economica %}
     <a href="{% url 'economia:situacioneconomica_create' %}?estudio={{ estudio.pk }}&back={{ estudio.pk }}"
        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
        style="background-color: var(--meraki-purple);"
@@ -595,14 +596,14 @@
       Registrar situación económica
     </a>
     {% else %}
-    <a href="{% url 'economia:situacioneconomica_update' estudio.situacioneconomica.pk %}"
+    <a href="{% url 'economia:situacioneconomica_update' estudio.situacion_economica.pk %}?back={{ estudio.pk }}"
        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
       Editar
     </a>
     {% endif %}
   </div>
-  {% if estudio.situacioneconomica %}
-  {% with eco=estudio.situacioneconomica %}
+  {% if estudio.situacion_economica %}
+  {% with eco=estudio.situacion_economica %}
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- Ingresos -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
@@ -670,15 +671,15 @@
       <div class="space-y-3">
         <div class="bg-green-50 rounded-lg p-3">
           <p class="text-xs text-green-600 font-medium">Ingreso total mensual</p>
-          <p class="text-lg font-bold text-green-700">$0</p>
+          <p class="text-lg font-bold text-green-700">${{ eco.ingreso_total_mensual }}</p>
         </div>
         <div class="bg-red-50 rounded-lg p-3">
           <p class="text-xs text-red-600 font-medium">Egreso total mensual</p>
-          <p class="text-lg font-bold text-red-700">$0</p>
+          <p class="text-lg font-bold text-red-700">${{ eco.egreso_total_mensual }}</p>
         </div>
         <div class="bg-purple-50 rounded-lg p-3">
           <p class="text-xs text-purple-600 font-medium">Capacidad de ahorro</p>
-          <p class="text-lg font-bold text-purple-700">$0</p>
+          <p class="text-lg font-bold {% if eco.capacidad_ahorro >= 0 %}text-purple-700{% else %}text-red-700{% endif %}">${{ eco.capacidad_ahorro }}</p>
         </div>
       </div>
     </div>
@@ -687,6 +688,75 @@
   {% else %}
   {% include 'components/empty_state.html' with empty_title="Sin situación económica" empty_message="Registra los ingresos, egresos y patrimonio de la persona." %}
   {% endif %}
+</div>
+
+<!-- TAB: Referencias -->
+<div id="tab-referencias" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-base font-semibold text-gray-900">Referencias</h2>
+    <a href="{% url 'referencias:referencia_create' %}?persona={{ estudio.persona.pk }}&back={{ estudio.pk }}"
+       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+       style="background-color: var(--meraki-purple);"
+       onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+       onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Agregar referencia
+    </a>
+  </div>
+  {% with referencias=estudio.persona.referencias.all %}
+  {% if referencias %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">Tipo</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Teléfono</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Relación</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Verificada</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for ref in referencias %}
+        <tr class="hover:bg-purple-50 transition-colors">
+          <td class="px-4 py-3">
+            <span class="text-sm font-medium text-gray-900">{{ ref.nombre }}</span>
+          </td>
+          <td class="px-4 py-3 hidden sm:table-cell">
+            <span class="text-xs text-gray-600">{{ ref.get_tipo_display }}</span>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell">
+            <a href="tel:{{ ref.telefono }}" class="text-sm text-purple-600 hover:underline">{{ ref.telefono }}</a>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell">
+            <span class="text-sm text-gray-600">{{ ref.parentesco_o_relacion }}</span>
+          </td>
+          <td class="px-4 py-3">
+            {% if ref.verificada %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verificada</span>
+            {% else %}
+            <a href="{% url 'referencias:referencia_verificar' ref.pk %}?back={{ estudio.pk }}"
+               class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors">
+              Pendiente
+            </a>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'referencias:referencia_update' ref.pk %}?back={{ estudio.pk }}"
+               class="text-xs text-purple-600 hover:underline">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {% include 'components/empty_state.html' with empty_title="Sin referencias" empty_message="Agrega referencias personales o laborales de la persona." %}
+  {% endif %}
+  {% endwith %}
 </div>
 
 <!-- TAB: Visitas -->
@@ -718,7 +788,7 @@
             {% if visita.verificacion_domicilio %}Domicilio verificado{% else %}Domicilio no verificado{% endif %}
           </p>
         </div>
-        <a href="{% url 'visitas:visitadomiciliaria_update' visita.pk %}"
+        <a href="{% url 'visitas:visitadomiciliaria_update' visita.pk %}?back={{ estudio.pk }}"
            class="text-xs text-purple-600 hover:underline flex-shrink-0">Editar</a>
       </div>
       {% if visita.observaciones_generales %}
@@ -795,7 +865,7 @@
       Registrar evaluación
     </a>
     {% else %}
-    <a href="{% url 'evaluacion:evaluacionriesgo_update' estudio.evaluacion.pk %}"
+    <a href="{% url 'evaluacion:evaluacionriesgo_update' estudio.evaluacion.pk %}?back={{ estudio.pk }}"
        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
       Editar evaluación
     </a>
@@ -1113,7 +1183,6 @@
           <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition-colors">
             <input type="radio" name="estado" value="{{ codigo }}" class="text-purple-600" required
                    style="accent-color: var(--meraki-purple);">
-            <span class="text-sm font-medium text-gray-800">{{ estados_display|default_if_none:"" }}</span>
             <span class="text-sm font-medium text-gray-800">
               {% if codigo == 'BOR' %}Borrador
               {% elif codigo == 'VIS' %}Visita programada
@@ -1159,7 +1228,7 @@
 
 {% block extra_js %}
 <script>
-var TABS = ['resumen', 'domicilio', 'educacion', 'salud', 'familia', 'laboral', 'economico', 'visitas', 'documentos', 'evaluacion', 'candidato'];
+var TABS = ['resumen', 'domicilio', 'educacion', 'salud', 'familia', 'laboral', 'economico', 'referencias', 'visitas', 'documentos', 'evaluacion', 'candidato'];
 
 function cambiarPestana(nombrePestana) {
   TABS.forEach(function(tab) {

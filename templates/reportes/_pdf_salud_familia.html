@@ -1,4 +1,4 @@
-{# ============================================================
+{% comment %}
    PÁGINA 3 — HÁBITOS / SALUD + GRUPO FAMILIAR
    Contexto requerido:
      - salud: SaludPersona|None
@@ -6,13 +6,11 @@
      - persona: Persona (para periodos_sin_laborar y actividades_tiempo_libre,
                          ya mostrados en pág. 2 si existen, aquí se omiten)
      - laboral: QuerySet[HistorialLaboral]
-============================================================ #}
+{% endcomment %}
 
 <div class="pagina-nueva">
 
-  {# ============================================================
-     SECCIÓN: HÁBITOS Y SALUD
-  ============================================================ #}
+  {% comment %} SECCIÓN: HÁBITOS Y SALUD {% endcomment %}
   <div class="seccion-titulo">Hábitos y Salud</div>
 
   {% if salud %}
@@ -73,9 +71,7 @@
     <div class="sin-datos">No se registró información de salud para este candidato</div>
   {% endif %}
 
-  {# ============================================================
-     SECCIÓN: HISTORIAL LABORAL (resumen tabular)
-  ============================================================ #}
+  {% comment %} SECCIÓN: HISTORIAL LABORAL (resumen tabular) {% endcomment %}
   <div class="seccion-titulo" style="margin-top:14pt;">Historial Laboral</div>
 
   {% if laboral %}
@@ -133,9 +129,7 @@
     <div class="sin-datos">No se registró historial laboral</div>
   {% endif %}
 
-  {# ============================================================
-     SECCIÓN: GRUPO FAMILIAR
-  ============================================================ #}
+  {% comment %} SECCIÓN: GRUPO FAMILIAR {% endcomment %}
   <div class="seccion-titulo" style="margin-top:14pt;">Grupo Familiar</div>
 
   {% if familia %}

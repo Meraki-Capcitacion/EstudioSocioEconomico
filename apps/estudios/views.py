@@ -75,6 +75,13 @@ class EstudioCreateView(LoginRequiredMixin, CreateView):
     form_class = EstudioSocioeconomicoForm
     success_url = reverse_lazy('estudios:estudio_list')
 
+    def get_initial(self):
+        initial = super().get_initial()
+        persona_pk = self.request.GET.get('persona')
+        if persona_pk:
+            initial['persona'] = persona_pk
+        return initial
+
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         form.instance.updated_by = self.request.user

@@ -266,7 +266,7 @@
 <div id="tab-estudios" class="tab-content hidden">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-base font-semibold text-gray-900">Estudios socioeconómicos</h2>
-    <a href="{% url 'estudios:estudio_create' %}"
+    <a href="{% url 'estudios:estudio_create' %}?persona={{ persona.pk }}"
        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg transition-colors"
        style="background-color: var(--meraki-purple);"
        onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"

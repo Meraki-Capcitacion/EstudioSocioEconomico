@@ -32,7 +32,7 @@
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-900 truncate">{{ familiar.nombre_completo }}</p>
         <p class="text-xs text-gray-500">
-          {{ familiar.get_parentesco_display }} &bull; {{ familiar.edad }} años &bull; {{ familiar.get_tipo_dependencia_display }}
+          {{ familiar.parentesco }} &bull; {{ familiar.edad }} años &bull; {{ familiar.get_tipo_dependencia_display }}
         </p>
       </div>
       <div class="flex-shrink-0">
@@ -90,14 +90,25 @@
           <label for="{{ form.parentesco.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
             Parentesco *
           </label>
-          <select name="{{ form.parentesco.html_name }}" id="{{ form.parentesco.id_for_label }}"
-                  class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white transition-colors
-                         {% if form.parentesco.errors %}border-red-400{% endif %}">
-            <option value="">-- Selecciona --</option>
-            {% for val, label in form.parentesco.field.choices %}
-            <option value="{{ val }}" {% if form.parentesco.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
+          <input type="text" name="{{ form.parentesco.html_name }}" id="{{ form.parentesco.id_for_label }}"
+                 value="{{ form.parentesco.value|default:'' }}"
+                 placeholder="Ej: Esposa, Hijo, Madre..."
+                 list="parentesco-opciones"
+                 class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
+                        {% if form.parentesco.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
+          <datalist id="parentesco-opciones">
+            <option value="Esposo/a">
+            <option value="Pareja">
+            <option value="Hijo/a">
+            <option value="Madre">
+            <option value="Padre">
+            <option value="Hermano/a">
+            <option value="Abuelo/a">
+            <option value="Suegro/a">
+            <option value="Cuñado/a">
+            <option value="Sobrino/a">
+            <option value="Otro">
+          </datalist>
           {% for error in form.parentesco.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
         <div>

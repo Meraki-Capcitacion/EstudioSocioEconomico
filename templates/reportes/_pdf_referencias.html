@@ -1,9 +1,9 @@
-{# ============================================================
+{% comment %}
    PÁGINA 5 — REFERENCIAS + OBSERVACIONES DE COLONOS
    Contexto requerido:
      - referencias: QuerySet[Referencia]
      - visita_principal: VisitaDomiciliaria|None
-============================================================ #}
+{% endcomment %}
 
 <div class="pagina-nueva">
 
@@ -133,9 +133,7 @@
     <div class="sin-datos">No se registraron referencias para este candidato</div>
   {% endif %}
 
-  {# ============================================================
-     SECCIÓN: OBSERVACIONES DE LA VISITA DOMICILIARIA
-  ============================================================ #}
+  {% comment %} SECCIÓN: OBSERVACIONES DE LA VISITA DOMICILIARIA {% endcomment %}
   {% if visita_principal %}
 
     {% if visita_principal.comentarios_colonos %}

@@ -1,30 +1,18 @@
-{# ============================================================
+{% comment %}
    ENCABEZADO DE SECCIÓN REUTILIZABLE
-   Uso: {% include "reportes/_pdf_header.html" with titulo="Mi sección" subtitulo="Opcional" %}
-
-   Este parcial se puede incluir al inicio de cada página/sección
-   para mostrar el nombre de la empresa y el folio del candidato
-   de manera compacta (distinto de la portada).
+   Uso: include "reportes/_pdf_header.html" with titulo="Mi sección" subtitulo="Opcional"
 
    Contexto requerido (del contexto global):
      - persona: Persona
      - empresa: EmpresaCliente|None
      - estudio: EstudioSocioeconomico
-   Variables opcionales pasadas con {% include ... with %}:
-     - titulo: str   — Título de la sección (p.ej. "Datos Personales")
+   Variables opcionales:
+     - titulo: str   — Título de la sección
      - subtitulo: str — Subtítulo opcional
-============================================================ #}
 
-{# Nota para implementadores:
-   WeasyPrint soporta contenido en @page mediante @top-left, @top-center, @top-right
-   pero esos bloques solo admiten contenido estático (sin template tags Django).
-   Por eso este archivo sirve como encabezado VISUAL dentro del flujo del documento,
-   no como header CSS de página. Se puede incluir dentro de cada sección si se requiere
-   repetir el encabezado de empresa en cada hoja impresa.
-
-   Uso típico (al inicio de un parcial antes del page-break):
-     {% include "reportes/_pdf_header.html" with titulo="Datos Personales" %}
-#}
+   Nota: WeasyPrint no soporta template tags en @page CSS, por eso
+   este archivo sirve como encabezado VISUAL dentro del flujo del documento.
+{% endcomment %}
 
 <div style="
   display: table;

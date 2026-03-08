@@ -29,7 +29,7 @@ class Paso1PersonaForm(forms.ModelForm):
             'historial_residencias', 'periodos_sin_laborar', 'actividades_tiempo_libre',
         ]
         widgets = {
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             'historial_residencias': forms.Textarea(attrs={'rows': 3}),
             'periodos_sin_laborar': forms.Textarea(attrs={'rows': 3}),
             'actividades_tiempo_libre': forms.Textarea(attrs={'rows': 3}),
@@ -51,6 +51,11 @@ class Paso2DomicilioForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        if args and args[0]:
+            data = args[0].copy()
+            if 'valor_inmueble' in data:
+                data['valor_inmueble'] = data['valor_inmueble'].replace(',', '')
+            args = (data,) + args[1:]
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
@@ -113,7 +118,11 @@ class Paso4FamiliarForm(forms.ModelForm):
     """Paso 4 — Miembro del grupo familiar."""
     class Meta:
         model = GrupoFamiliar
-        exclude = ['persona', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        exclude = [
+            'persona', 'created_at', 'updated_at', 'created_by', 'updated_by',
+            'escolaridad', 'telefono', 'ciudad_residencia',
+            'aporta_ingreso', 'monto_aportacion',
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -126,6 +135,15 @@ class Paso4FamiliarForm(forms.ModelForm):
 
 class Paso5EconomiaForm(forms.ModelForm):
     """Paso 5 — Situación económica y patrimonio."""
+
+    _CAMPOS_DECIMALES = [
+        'salario_mensual', 'bonos_comisiones', 'ingresos_extra', 'apoyo_familiar', 'otros_ingresos',
+        'gasto_alimentacion', 'gasto_vivienda', 'gasto_servicios', 'gasto_transporte',
+        'gasto_educacion', 'gasto_salud', 'gasto_deudas', 'otros_gastos',
+        'automovil_valor_comercial', 'credito_hipotecario', 'credito_automotriz',
+        'tarjetas_credito', 'tienda_departamental_adeudo', 'prestamos_personales', 'otros_creditos',
+    ]
+
     class Meta:
         model = SituacionEconomica
         exclude = ['estudio']
@@ -134,6 +152,16 @@ class Paso5EconomiaForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Limpiar comas de los campos decimales antes de que Django valide
+        if args and args[0]:
+            data = args[0].copy()
+            for nombre in self._CAMPOS_DECIMALES:
+                if nombre in data:
+                    data[nombre] = data[nombre].replace(',', '')
+            # otros_creditos no se renderiza en el portal; inyectar default 0
+            if 'otros_creditos' not in data:
+                data['otros_creditos'] = '0'
+            args = (data,) + args[1:]
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             if isinstance(field.widget, forms.CheckboxInput):
@@ -169,22 +197,49 @@ class Paso6ReferenciaForm(forms.ModelForm):
 
 class Paso7LaboralForm(forms.ModelForm):
     """Paso 7a — Historial laboral."""
+    fecha_inicio = forms.IntegerField(
+        min_value=1950, max_value=2100, label='Año de inicio',
+        widget=forms.NumberInput(attrs={'placeholder': 'Ej: 2020', 'min': 1950, 'max': 2100}),
+    )
+    fecha_fin = forms.IntegerField(
+        min_value=1950, max_value=2100, required=False, label='Año de salida',
+        widget=forms.NumberInput(attrs={'placeholder': 'Ej: 2023', 'min': 1950, 'max': 2100}),
+    )
+
     class Meta:
         model = HistorialLaboral
         exclude = ['persona', 'verificada', 'fecha_verificacion', 'created_at', 'updated_at', 'created_by', 'updated_by']
         widgets = {
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_fin': forms.DateInput(attrs={'type': 'date'}),
             'motivo_separacion': forms.Textarea(attrs={'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
+        if args and args[0]:
+            data = args[0].copy()
+            for campo in ('salario_inicial', 'salario_final'):
+                if campo in data:
+                    data[campo] = data[campo].replace(',', '')
+            args = (data,) + args[1:]
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
+        for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.setdefault('class', 'h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500')
             else:
                 field.widget.attrs.setdefault('class', 'w-full rounded-lg border-gray-300 focus:ring-purple-500 focus:border-purple-500')
+
+    def clean(self):
+        from datetime import date
+        cleaned = super().clean()
+        anio_inicio = cleaned.get('fecha_inicio')
+        anio_fin = cleaned.get('fecha_fin')
+        if anio_inicio:
+            cleaned['fecha_inicio'] = date(anio_inicio, 1, 1)
+        if anio_fin:
+            cleaned['fecha_fin'] = date(anio_fin, 1, 1)
+        es_actual = cleaned.get('es_trabajo_actual', False)
+        if not es_actual and not anio_fin:
+            self.add_error('fecha_fin', 'Indica el año de salida, o marca que es tu trabajo actual.')
+        return cleaned
 
 
 class Paso7DocumentoForm(forms.ModelForm):

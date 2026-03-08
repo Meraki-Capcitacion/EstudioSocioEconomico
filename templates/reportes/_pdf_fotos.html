@@ -1,20 +1,20 @@
-{# ============================================================
+{% comment %}
    PÁGINAS 7-8 — GALERÍA DE FOTOGRAFÍAS DEL DOMICILIO
    Contexto requerido:
      - fotos: QuerySet[Documento]  (tipo FOT, excluye foto de candidato)
      - persona: Persona
    Nota: la primera foto se usa como foto del candidato en la portada.
          Aquí se muestran todas las demás (a partir de la segunda).
-============================================================ #}
+{% endcomment %}
 
 <div class="pagina-nueva">
 
   <div class="seccion-titulo">Fotografías del Domicilio</div>
 
-  {# Slicing: mostrar fotos del domicilio (todas las fotos disponibles).
+  {% comment %} Slicing: mostrar fotos del domicilio (todas las fotos disponibles).
      La vista debería enviar en 'fotos' solo las fotos tipo FOT del estudio,
      sin incluir la foto del candidato (que se filtra aparte en la vista).
-     Si la vista envía todo junto, el evaluador debe separar en la vista. #}
+     Si la vista envía todo junto, el evaluador debe separar en la vista. {% endcomment %}
 
   {% if fotos %}
 

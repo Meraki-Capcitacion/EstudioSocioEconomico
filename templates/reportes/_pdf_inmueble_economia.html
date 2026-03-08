@@ -1,15 +1,13 @@
-{# ============================================================
+{% comment %}
    PÁGINA 4 — DATOS DEL INMUEBLE + SITUACIÓN ECONÓMICA
    Contexto requerido:
      - domicilio_actual: Domicilio|None  (tipo ACT)
      - economia: SituacionEconomica|None
-============================================================ #}
+{% endcomment %}
 
 <div class="pagina-nueva">
 
-  {# ============================================================
-     SECCIÓN: DATOS DEL INMUEBLE
-  ============================================================ #}
+  {% comment %} SECCIÓN: DATOS DEL INMUEBLE {% endcomment %}
   <div class="seccion-titulo">Datos del Inmueble</div>
 
   {% if domicilio_actual %}
@@ -233,9 +231,7 @@
     <div class="sin-datos">No se registró domicilio actual para este candidato</div>
   {% endif %}
 
-  {# ============================================================
-     SECCIÓN: SITUACIÓN ECONÓMICA
-  ============================================================ #}
+  {% comment %} SECCIÓN: SITUACIÓN ECONÓMICA {% endcomment %}
   <div class="seccion-titulo" style="margin-top:14pt;">Situación Económica</div>
 
   {% if economia %}

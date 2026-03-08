@@ -7,10 +7,18 @@ class DateInput(forms.DateInput):
     """Widget de fecha que renderiza <input type="date">."""
     input_type = 'date'
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('format', '%Y-%m-%d')
+        super().__init__(*args, **kwargs)
+
 
 class DateTimeLocalInput(forms.DateTimeInput):
     """Widget de fecha-hora que renderiza <input type="datetime-local">."""
     input_type = 'datetime-local'
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('format', '%Y-%m-%dT%H:%M')
+        super().__init__(*args, **kwargs)
 
 
 class EstudioSocioeconomicoForm(forms.ModelForm):

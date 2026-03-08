@@ -75,6 +75,12 @@ class DomicilioUpdateView(LoginRequiredMixin, UpdateView):
     ]
     success_url = reverse_lazy('domicilios:domicilio_list')
 
+    def get_success_url(self):
+        back = self.request.GET.get('back')
+        if back:
+            return reverse_lazy('estudios:estudio_detail', kwargs={'pk': back})
+        return super().get_success_url()
+
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
         return super().form_valid(form)

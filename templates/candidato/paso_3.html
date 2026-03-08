@@ -83,24 +83,40 @@
         {% for error in form_educacion.institucion.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
 
+      <div>
+        <label for="{{ form_educacion.titulo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+          Título o grado obtenido *
+        </label>
+        <input type="text" name="{{ form_educacion.titulo.html_name }}" id="{{ form_educacion.titulo.id_for_label }}"
+               value="{{ form_educacion.titulo.value|default:'' }}"
+               placeholder="Ej: Licenciado en Administración, Bachiller..."
+               class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
+                      {% if form_educacion.titulo.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
+        {% for error in form_educacion.titulo.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="{{ form_educacion.fecha_inicio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-            Año de inicio
+          <label for="{{ form_educacion.anio_inicio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Año de inicio *
           </label>
-          <input type="date" name="{{ form_educacion.fecha_inicio.html_name }}" id="{{ form_educacion.fecha_inicio.id_for_label }}"
-                 value="{{ form_educacion.fecha_inicio.value|default:'' }}"
-                 class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors">
-          {% for error in form_educacion.fecha_inicio.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+          <input type="number" name="{{ form_educacion.anio_inicio.html_name }}" id="{{ form_educacion.anio_inicio.id_for_label }}"
+                 value="{{ form_educacion.anio_inicio.value|default:'' }}"
+                 placeholder="Ej: 2018" min="1950" max="2100"
+                 class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
+                        {% if form_educacion.anio_inicio.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
+          {% for error in form_educacion.anio_inicio.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
         <div>
-          <label for="{{ form_educacion.fecha_fin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+          <label for="{{ form_educacion.anio_fin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
             Año de fin
           </label>
-          <input type="date" name="{{ form_educacion.fecha_fin.html_name }}" id="{{ form_educacion.fecha_fin.id_for_label }}"
-                 value="{{ form_educacion.fecha_fin.value|default:'' }}"
-                 class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors">
-          {% for error in form_educacion.fecha_fin.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+          <input type="number" name="{{ form_educacion.anio_fin.html_name }}" id="{{ form_educacion.anio_fin.id_for_label }}"
+                 value="{{ form_educacion.anio_fin.value|default:'' }}"
+                 placeholder="Ej: 2022" min="1950" max="2100"
+                 class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
+          <p class="text-xs text-gray-400 mt-1">Deja vacío si sigues estudiando</p>
+          {% for error in form_educacion.anio_fin.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
       </div>
 
@@ -152,10 +168,12 @@
     <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
       <div class="flex justify-between items-center mb-1.5">
         <p class="text-sm font-medium text-gray-900">{{ idioma.idioma }}</p>
+        {% if idioma.nivel_certificacion %}
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
               style="background-color: var(--meraki-purple-light); color: var(--meraki-purple);">
-          {{ idioma.get_nivel_display|default:idioma.nivel }}
+          {{ idioma.nivel_certificacion }}
         </span>
+        {% endif %}
       </div>
       <div class="grid grid-cols-3 gap-2 text-xs text-gray-500">
         <div>
@@ -206,17 +224,18 @@
       </div>
 
       <div>
-        <label for="{{ form_idioma.nivel.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+        <label for="{{ form_idioma.nivel_certificacion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
           Nivel general
         </label>
-        <select name="{{ form_idioma.nivel.html_name }}" id="{{ form_idioma.nivel.id_for_label }}"
+        <select name="{{ form_idioma.nivel_certificacion.html_name }}" id="{{ form_idioma.nivel_certificacion.id_for_label }}"
                 class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white transition-colors">
           <option value="">-- Selecciona nivel --</option>
-          {% for val, label in form_idioma.nivel.field.choices %}
-          <option value="{{ val }}" {% if form_idioma.nivel.value == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
+          <option value="Básico" {% if form_idioma.nivel_certificacion.value == "Básico" %}selected{% endif %}>Básico</option>
+          <option value="Intermedio" {% if form_idioma.nivel_certificacion.value == "Intermedio" %}selected{% endif %}>Intermedio</option>
+          <option value="Avanzado" {% if form_idioma.nivel_certificacion.value == "Avanzado" %}selected{% endif %}>Avanzado</option>
+          <option value="Nativo" {% if form_idioma.nivel_certificacion.value == "Nativo" %}selected{% endif %}>Nativo</option>
         </select>
-        {% for error in form_idioma.nivel.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+        {% for error in form_idioma.nivel_certificacion.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="grid grid-cols-3 gap-3">

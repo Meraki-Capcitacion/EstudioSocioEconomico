@@ -29,6 +29,22 @@ class EmpresaCliente(models.Model):
 
 class TipoEstudio(models.Model):
     """Catálogo de tipos de estudio socioeconómico"""
+
+    SECCIONES_DISPONIBLES = [
+        ('candidato',   'Portal del Candidato'),
+        ('domicilios',  'Domicilio'),
+        ('educacion',   'Educación e Idiomas'),
+        ('salud',       'Salud'),
+        ('laboral',     'Historial Laboral'),
+        ('familia',     'Grupo Familiar'),
+        ('referencias', 'Referencias'),
+        ('economia',    'Situación Económica'),
+        ('visitas',     'Visita Domiciliaria'),
+        ('evaluacion',  'Evaluación de Riesgo'),
+        ('documentos',  'Documentos'),
+    ]
+    SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
+
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
 
@@ -42,6 +58,16 @@ class TipoEstudio(models.Model):
     requiere_visita = models.BooleanField(default=True)
     requiere_verificacion_laboral = models.BooleanField(default=True)
     puntuacion_minima_aprobacion = models.IntegerField(default=70)
+
+    secciones = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Secciones del estudio',
+        help_text=(
+            'Secciones incluidas en este tipo de estudio '
+            '(candidato y evaluacion son obligatorias)'
+        ),
+    )
 
     class Meta:
         verbose_name = "Tipo de estudio"

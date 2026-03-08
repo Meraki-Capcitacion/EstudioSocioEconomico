@@ -7,6 +7,10 @@ class DateTimeLocalInput(forms.DateTimeInput):
     """Widget de fecha-hora que renderiza <input type="datetime-local">."""
     input_type = 'datetime-local'
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('format', '%Y-%m-%dT%H:%M')
+        super().__init__(*args, **kwargs)
+
 
 class ReferenciaForm(forms.ModelForm):
     """

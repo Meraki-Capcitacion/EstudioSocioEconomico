@@ -52,7 +52,7 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-900">{{ ref.nombre }}</p>
-            <p class="text-xs text-gray-500">{{ ref.relacion|default:ref.tipo }}</p>
+            <p class="text-xs text-gray-500">{{ ref.parentesco_o_relacion|default:ref.tipo }}</p>
           </div>
         </div>
         <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium
@@ -71,8 +71,8 @@
           {{ ref.telefono }}
         </a>
         {% endif %}
-        {% if ref.relacion %}
-        <span class="text-xs text-gray-400">{{ ref.relacion }}</span>
+        {% if ref.parentesco_o_relacion %}
+        <span class="text-xs text-gray-400">{{ ref.parentesco_o_relacion }}</span>
         {% endif %}
       </div>
     </div>
@@ -147,29 +147,28 @@
       </div>
 
       <div>
-        <label for="{{ form.relacion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+        <label for="{{ form.parentesco_o_relacion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
           ¿Cuál es tu relación con esta persona? *
         </label>
-        <input type="text" name="{{ form.relacion.html_name }}" id="{{ form.relacion.id_for_label }}"
-               value="{{ form.relacion.value|default:'' }}"
+        <input type="text" name="{{ form.parentesco_o_relacion.html_name }}" id="{{ form.parentesco_o_relacion.id_for_label }}"
+               value="{{ form.parentesco_o_relacion.value|default:'' }}"
                placeholder="Ej: Amigo de la infancia, compañero de trabajo, vecino..."
                class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
-                      {% if form.relacion.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
-        {% for error in form.relacion.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+                      {% if form.parentesco_o_relacion.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
+        {% for error in form.parentesco_o_relacion.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
 
-      {% if form.tiempo_conocido %}
       <div>
-        <label for="{{ form.tiempo_conocido.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-          ¿Cuánto tiempo la conoces?
+        <label for="{{ form.tiempo_conocer_anios.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
+          ¿Cuántos años la conoces? *
         </label>
-        <input type="text" name="{{ form.tiempo_conocido.html_name }}" id="{{ form.tiempo_conocido.id_for_label }}"
-               value="{{ form.tiempo_conocido.value|default:'' }}"
-               placeholder="Ej: 5 años, desde la preparatoria..."
-               class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
-        {% for error in form.tiempo_conocido.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+        <input type="number" name="{{ form.tiempo_conocer_anios.html_name }}" id="{{ form.tiempo_conocer_anios.id_for_label }}"
+               value="{{ form.tiempo_conocer_anios.value|default:'' }}"
+               placeholder="Ej: 5" min="0" max="80"
+               class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
+                      {% if form.tiempo_conocer_anios.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
+        {% for error in form.tiempo_conocer_anios.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
-      {% endif %}
 
     </div>
 

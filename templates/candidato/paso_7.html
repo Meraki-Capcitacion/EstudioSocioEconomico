@@ -36,9 +36,9 @@
           </div>
           <p class="text-xs text-gray-600 mt-0.5">{{ empleo.puesto }}</p>
           <p class="text-xs text-gray-400 mt-0.5">
-            {{ empleo.fecha_inicio|date:"M Y" }} —
+            {{ empleo.fecha_inicio|date:"Y" }} —
             {% if empleo.es_trabajo_actual %}Presente
-            {% elif empleo.fecha_fin %}{{ empleo.fecha_fin|date:"M Y" }}
+            {% elif empleo.fecha_fin %}{{ empleo.fecha_fin|date:"Y" }}
             {% else %}—{% endif %}
           </p>
         </div>
@@ -122,20 +122,22 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label for="{{ form_laboral.fecha_inicio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-            Fecha de inicio *
+            Año de inicio *
           </label>
-          <input type="date" name="{{ form_laboral.fecha_inicio.html_name }}" id="{{ form_laboral.fecha_inicio.id_for_label }}"
+          <input type="number" name="{{ form_laboral.fecha_inicio.html_name }}" id="{{ form_laboral.fecha_inicio.id_for_label }}"
                  value="{{ form_laboral.fecha_inicio.value|default:'' }}"
+                 placeholder="Ej: 2020" min="1950" max="2100"
                  class="block w-full px-4 py-3 text-base border rounded-xl focus:outline-none focus:ring-2 transition-colors
                         {% if form_laboral.fecha_inicio.errors %}border-red-400 focus:ring-red-300 bg-red-50{% else %}border-gray-300 focus:ring-purple-300 focus:border-purple-400{% endif %}">
           {% for error in form_laboral.fecha_inicio.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
         <div id="campo-fecha-fin" {% if form_laboral.es_trabajo_actual.value %}style="display:none"{% endif %}>
           <label for="{{ form_laboral.fecha_fin.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-            Fecha de salida
+            Año de salida
           </label>
-          <input type="date" name="{{ form_laboral.fecha_fin.html_name }}" id="{{ form_laboral.fecha_fin.id_for_label }}"
+          <input type="number" name="{{ form_laboral.fecha_fin.html_name }}" id="{{ form_laboral.fecha_fin.id_for_label }}"
                  value="{{ form_laboral.fecha_fin.value|default:'' }}"
+                 placeholder="Ej: 2023" min="1950" max="2100"
                  class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
           {% for error in form_laboral.fecha_fin.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
@@ -147,9 +149,9 @@
           <label for="{{ form_laboral.salario_inicial.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
             Salario inicial ($)
           </label>
-          <input type="number" name="{{ form_laboral.salario_inicial.html_name }}" id="{{ form_laboral.salario_inicial.id_for_label }}"
+          <input type="text" inputmode="decimal" name="{{ form_laboral.salario_inicial.html_name }}" id="{{ form_laboral.salario_inicial.id_for_label }}"
                  value="{{ form_laboral.salario_inicial.value|default:'' }}"
-                 placeholder="0.00" min="0" step="0.01"
+                 placeholder="Ej: 12,000"
                  class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
           {% for error in form_laboral.salario_inicial.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>
@@ -159,9 +161,9 @@
           <label for="{{ form_laboral.salario_final.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
             Salario final ($)
           </label>
-          <input type="number" name="{{ form_laboral.salario_final.html_name }}" id="{{ form_laboral.salario_final.id_for_label }}"
+          <input type="text" inputmode="decimal" name="{{ form_laboral.salario_final.html_name }}" id="{{ form_laboral.salario_final.id_for_label }}"
                  value="{{ form_laboral.salario_final.value|default:'' }}"
-                 placeholder="0.00" min="0" step="0.01"
+                 placeholder="Ej: 15,000"
                  class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
           {% for error in form_laboral.salario_final.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
         </div>

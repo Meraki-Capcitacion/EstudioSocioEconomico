@@ -262,7 +262,7 @@
     </h3>
     <div class="grid grid-cols-2 gap-3">
       {% for field in form %}
-      {% if field.html_name == 'agua' or field.html_name == 'luz' or field.html_name == 'drenaje' or field.html_name == 'gas' or field.html_name == 'internet' or field.html_name == 'tv_cable' or field.html_name == 'pavimentacion' or field.html_name == 'telefono_domicilio' %}
+      {% if field.html_name == 'tiene_agua' or field.html_name == 'tiene_luz' or field.html_name == 'tiene_drenaje' or field.html_name == 'tiene_gas' or field.html_name == 'tiene_internet' or field.html_name == 'tiene_tv_cable' or field.html_name == 'tiene_pavimentacion' or field.html_name == 'tiene_telefono_domicilio' %}
       <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition-colors">
         <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
                {% if field.value %}checked{% endif %}
@@ -282,7 +282,7 @@
     </h3>
     <div class="grid grid-cols-2 gap-3">
       {% for field in form %}
-      {% if field.html_name == 'sala' or field.html_name == 'cocina' or field.html_name == 'comedor' or field.html_name == 'patio_servicio' or field.html_name == 'cochera' %}
+      {% if field.html_name == 'tiene_sala' or field.html_name == 'tiene_cocina' or field.html_name == 'tiene_comedor' or field.html_name == 'tiene_patio_servicio' or field.html_name == 'tiene_cochera' %}
       <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition-colors">
         <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
                {% if field.value %}checked{% endif %}
@@ -303,7 +303,7 @@
     <p class="text-xs text-gray-500 mb-3">Selecciona los que apliquen a tu vivienda</p>
     <div class="grid grid-cols-2 gap-3 mb-4">
       {% for field in form %}
-      {% if field.html_name == 'piso' or field.html_name == 'piso_cemento' or field.html_name == 'enjarre' or field.html_name == 'paredes_sin_enjarre' or field.html_name == 'techo_lamina' or field.html_name == 'loza' or field.html_name == 'puertas' %}
+      {% if field.html_name == 'tiene_piso' or field.html_name == 'tiene_piso_cemento' or field.html_name == 'tiene_enjarre' or field.html_name == 'tiene_paredes_sin_enjarre' or field.html_name == 'tiene_techo_lamina' or field.html_name == 'tiene_loza' or field.html_name == 'tiene_puertas' %}
       <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition-colors">
         <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
                {% if field.value %}checked{% endif %}
@@ -355,30 +355,37 @@
         <label for="{{ form.valor_inmueble.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
           Valor aproximado del inmueble ($)
         </label>
-        <input type="number" name="{{ form.valor_inmueble.html_name }}" id="{{ form.valor_inmueble.id_for_label }}"
+        <input type="text" inputmode="decimal" name="{{ form.valor_inmueble.html_name }}" id="{{ form.valor_inmueble.id_for_label }}"
                value="{{ form.valor_inmueble.value|default:'' }}"
-               placeholder="0.00" min="0" step="0.01"
+               placeholder="Ej: 500000 o 500,000.00"
                class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
+        <p class="mt-1 text-xs text-gray-400">Puedes usar comas como separador de miles: 500,000</p>
         {% for error in form.valor_inmueble.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
       <div>
         <label for="{{ form.valor_muebles.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-          Valor de muebles ($)
+          Valor aproximado de muebles
         </label>
-        <input type="number" name="{{ form.valor_muebles.html_name }}" id="{{ form.valor_muebles.id_for_label }}"
-               value="{{ form.valor_muebles.value|default:'' }}"
-               placeholder="0.00" min="0" step="0.01"
-               class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
+        <select name="{{ form.valor_muebles.html_name }}" id="{{ form.valor_muebles.id_for_label }}"
+                class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white transition-colors">
+          <option value="">-- Selecciona un rango --</option>
+          {% for val, label in form.valor_muebles.field.choices %}
+          {% if val %}<option value="{{ val }}" {% if form.valor_muebles.value == val %}selected{% endif %}>{{ label }}</option>{% endif %}
+          {% endfor %}
+        </select>
         {% for error in form.valor_muebles.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
       <div>
         <label for="{{ form.valor_electrodomesticos.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1.5">
-          Valor de electrodomésticos ($)
+          Valor aproximado de electrodomésticos
         </label>
-        <input type="number" name="{{ form.valor_electrodomesticos.html_name }}" id="{{ form.valor_electrodomesticos.id_for_label }}"
-               value="{{ form.valor_electrodomesticos.value|default:'' }}"
-               placeholder="0.00" min="0" step="0.01"
-               class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-colors">
+        <select name="{{ form.valor_electrodomesticos.html_name }}" id="{{ form.valor_electrodomesticos.id_for_label }}"
+                class="block w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white transition-colors">
+          <option value="">-- Selecciona un rango --</option>
+          {% for val, label in form.valor_electrodomesticos.field.choices %}
+          {% if val %}<option value="{{ val }}" {% if form.valor_electrodomesticos.value == val %}selected{% endif %}>{{ label }}</option>{% endif %}
+          {% endfor %}
+        </select>
         {% for error in form.valor_electrodomesticos.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
       </div>
     </div>

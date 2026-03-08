@@ -92,15 +92,17 @@
 
 {% block extra_js %}
 <script>
-// Mostrar/ocultar campo de monto según si aporta ingreso
 var checkAporta = document.getElementById('id_aporta_ingreso');
 var campoMonto = document.getElementById('campo-monto');
 
 function toggleMonto() {
-  if (checkAporta && campoMonto) {
-    campoMonto.style.opacity = checkAporta.checked ? '1' : '0.4';
-    var inputMonto = campoMonto.querySelector('input');
-    if (inputMonto) inputMonto.disabled = !checkAporta.checked;
+  if (!checkAporta || !campoMonto) return;
+  var inputMonto = campoMonto.querySelector('input');
+  if (checkAporta.checked) {
+    campoMonto.style.display = '';
+  } else {
+    campoMonto.style.display = 'none';
+    if (inputMonto) inputMonto.value = '0';
   }
 }
 
