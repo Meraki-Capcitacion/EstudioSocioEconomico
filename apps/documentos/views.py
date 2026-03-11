@@ -1,10 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
 )
 
 from .models import Documento
+from .forms import DocumentoForm
+from apps.estudios.models import EstudioSocioeconomico
 
 
 class DocumentoListView(LoginRequiredMixin, ListView):
@@ -35,13 +39,23 @@ class DocumentoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'documento'
 
 
+class EstudiosPorPersonaView(LoginRequiredMixin, View):
+    """Retorna las opciones <option> de estudios filtradas por persona (para HTMX)."""
+
+    def get(self, request):
+        persona_id = request.GET.get('persona')
+        estudios = EstudioSocioeconomico.objects.none()
+        if persona_id:
+            estudios = EstudioSocioeconomico.objects.filter(persona_id=persona_id)
+        options = '<option value="">---------</option>'
+        for estudio in estudios:
+            options += f'<option value="{estudio.pk}">{estudio}</option>'
+        return HttpResponse(options)
+
+
 class DocumentoCreateView(LoginRequiredMixin, CreateView):
     model = Documento
-    fields = [
-        'persona', 'estudio', 'tipo',
-        'archivo', 'nombre_archivo',
-        'verificado', 'verificado_por',
-    ]
+    form_class = DocumentoForm
     success_url = reverse_lazy('documentos:documento_list')
 
     def get_initial(self):
@@ -61,6 +75,11 @@ class DocumentoCreateView(LoginRequiredMixin, CreateView):
         return super().get_success_url()
 
     def form_valid(self, form):
+        archivo = form.cleaned_data.get('archivo')
+        if archivo:
+            form.instance.tamaño = archivo.size
+            if not form.cleaned_data.get('nombre_archivo'):
+                form.instance.nombre_archivo = archivo.name
         form.instance.created_by = self.request.user
         form.instance.updated_by = self.request.user
         return super().form_valid(form)
@@ -68,11 +87,7 @@ class DocumentoCreateView(LoginRequiredMixin, CreateView):
 
 class DocumentoUpdateView(LoginRequiredMixin, UpdateView):
     model = Documento
-    fields = [
-        'persona', 'estudio', 'tipo',
-        'archivo', 'nombre_archivo',
-        'verificado', 'verificado_por',
-    ]
+    form_class = DocumentoForm
     success_url = reverse_lazy('documentos:documento_list')
 
     def form_valid(self, form):

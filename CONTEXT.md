@@ -1,7 +1,7 @@
 # Documento de Contexto Arquitectónico — EstudioEcoNom
 
-**Versión:** 1.3
-**Fecha:** 2026-02-23
+**Versión:** 1.5
+**Fecha:** 2026-03-08
 **Proyecto:** Sistema de Gestión de Estudios Socioeconómicos (EstudioEcoNom)
 **Stack:** Django 6.0.2 · SQLite/PostgreSQL · Tailwind CSS CDN · WeasyPrint · Python 3.x
 **Idioma:** Español mexicano (`es-mx`) · Zona horaria: `America/Mexico_City`
@@ -67,6 +67,10 @@ auth.User (Django built-in)
     ├── EvaluacionRiesgo.evaluador (FK, SET_NULL)
     ├── Documento.verificado_por (FK, SET_NULL)
     └── Notificacion.usuario (FK, CASCADE)
+
+EmpresaCliente ───── (configuracion)
+    │ SET_NULL
+    └── EstudioSocioeconomico.empresa_cliente
 
 TipoEstudio  ─────── (configuracion)
     │ PROTECT
@@ -145,17 +149,17 @@ Persona ────────────────────────
                   ┌─────────┐
                   │   REV   │  En Revisión — revisión por analista senior
                   └────┬────┘
-              ┌────────┼────────┐
-              │        │        │
-              ▼        ▼        ▼
-         ┌────────┐ ┌────────┐ ┌────────┐
-         │  APR   │ │  REC   │ │  CAN   │
-         └────────┘ └────────┘ └────────┘
-         Aprobado   Rechazado  Cancelado
-         fecha_     (motivo en (puede
-         aprobacion  conclusion) ocurrir
-                               en cualquier
-                               estado)
+              ┌────────┤
+              │        │
+              ▼        ▼
+         ┌────────┐ ┌────────┐
+         │  APR   │ │  REC   │
+         └────────┘ └────┬───┘
+         Aprobado   Rechazado  ───► BOR (puede corregirse)
+         fecha_     (motivo en
+         aprobacion  conclusion)
+
+CAN: puede ocurrir desde BOR, VIS o PRO (no desde COM, REV, APR, REC)
 ```
 
 ### 1.4 Flujos de Verificación
@@ -175,7 +179,7 @@ Los siguientes modelos tienen un workflow de verificación con 3 campos:
 
 ### 2.1 `configuracion` — Base Abstracta y Catálogos
 
-**Propósito:** Define la clase base `TimestampModel` que hereda casi todo el proyecto, y el catálogo `TipoEstudio`.
+**Propósito:** Define la clase base `TimestampModel`, el catálogo `TipoEstudio` y el modelo `EmpresaCliente`.
 
 **Modelos:**
 
@@ -185,15 +189,43 @@ Los siguientes modelos tienen un workflow de verificación con 3 campos:
 - `created_by` — FK a `auth.User`, `SET_NULL`, related_name `%(class)s_created`
 - `updated_by` — FK a `auth.User`, `SET_NULL`, related_name `%(class)s_updated`
 
+**`EmpresaCliente`** (NO hereda TimestampModel)
+- `nombre` — CharField(200)
+- `logo` — ImageField, upload_to `empresas/logos/`, null/blank
+- `activo` — BooleanField, default=True
+- `created_at` — DateTimeField, auto_now_add
+- Ordenado por `nombre` ASC
+- Relacionado con `EstudioSocioeconomico` via FK `SET_NULL` (empresa que solicita el estudio)
+
 **`TipoEstudio`** (catálogo)
 - `nombre`, `descripcion`
 - `activo` (bool), `orden` (int) — para filtrado y ordenamiento en UI
 - `requiere_visita` (bool) — define si el tipo exige visita domiciliaria
 - `requiere_verificacion_laboral` (bool)
 - `puntuacion_minima_aprobacion` (int, default 70) — threshold para aprobación automática
+- `secciones` — JSONField (lista de strings) — secciones incluidas en este tipo de estudio
+
+**Secciones disponibles para `TipoEstudio.secciones`:**
+```python
+SECCIONES_DISPONIBLES = [
+    ('candidato', 'Portal del Candidato'),   # OBLIGATORIA
+    ('domicilios', 'Domicilio'),
+    ('educacion', 'Educación e Idiomas'),
+    ('salud', 'Salud'),
+    ('laboral', 'Historial Laboral'),
+    ('familia', 'Grupo Familiar'),
+    ('referencias', 'Referencias'),
+    ('economia', 'Situación Económica'),
+    ('visitas', 'Visita Domiciliaria'),
+    ('evaluacion', 'Evaluación de Riesgo'),  # OBLIGATORIA
+    ('documentos', 'Documentos'),
+]
+SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
+```
 
 **Notas especiales:**
 - `TipoEstudio` NO hereda de `TimestampModel` (tiene sus propios `created_at`, `updated_at` sin campos `_by`)
+- `EmpresaCliente` tampoco hereda de `TimestampModel`
 - `NivelEducativo` (app `educacion`) sigue el mismo patrón de catálogo
 - Siempre hay que poblar `created_by` y `updated_by` al guardar registros de otros modelos
 
@@ -307,7 +339,10 @@ Los siguientes modelos tienen un workflow de verificación con 3 campos:
 | `fecha_expiracion` | DateTimeField, null | Se genera con 30 días de vigencia |
 | `created_at` | DateTimeField, auto_now_add | |
 
-**Property:** `vigente` → `activo and (not fecha_expiracion or now() <= fecha_expiracion)`
+**Properties:**
+- `vigente` → `activo and (not fecha_expiracion or now() <= fecha_expiracion)`
+- `completado` → token desactivado por el candidato al finalizar el portal (activo=False pero sin expiración pasada)
+- `expirado` → `fecha_expiracion` definida y ya pasó (independientemente de `activo`)
 
 **Portal del candidato (Fase 3 — Escenario A):**
 ```
@@ -650,7 +685,15 @@ POST /estudios/<pk>/regenerar-token/ → RegenerarTokenView (login requerido)
 
 **Acción admin:** `marcar_verificado` (también asigna `verificado_por=request.user`)
 
-**URLs:** `documentos:documento_list/create/detail/update/delete`
+**`DocumentoForm`** (`apps/documentos/forms.py`):
+- Filtra `estudio` queryset según la persona seleccionada (o vacío si no hay persona)
+- Atributos HTMX en widget de persona: `hx-get="/documentos/estudios-por-persona/"`, `hx-target="#id_estudio"`, `hx-trigger="change"`
+- `nombre_archivo` es opcional en el form — se auto-llena desde `archivo.name` en `form_valid`
+- `tamaño` se auto-llena desde `archivo.size` en `form_valid` (campo NOT NULL)
+
+**`EstudiosPorPersonaView`**: recibe `?persona=<id>` y retorna `<option>` HTML de estudios filtrados.
+
+**URLs:** `documentos:documento_list/create/detail/update/delete`, `documentos:estudios_por_persona`
 
 ---
 
@@ -841,13 +884,24 @@ El sistema actualmente usa el modelo `auth.User` estándar de Django sin diferen
 - Configuración de email vía variables de entorno en `settings.py`
 
 **✅ Fase 7 — Roles y control de acceso** *(Completada 2026-02-24)*
-- Nueva app `apps/usuarios/` con `PerfilUsuario` (OneToOne con `auth.User`, `rol`: ANA/INS)
-- `apps/usuarios/signals.py` — auto-crea `PerfilUsuario` al crear `auth.User`
+- Nueva app `apps/usuarios/` con `PerfilUsuario` (OneToOne con `auth.User`, campos: `rol` ANA/INS, `telefono`, `activo`). Rol default: ANA. Properties: `es_analista`, `es_inspector`
+- `apps/usuarios/signals.py` — auto-crea `PerfilUsuario` (rol=ANA) al crear `auth.User`
 - `apps/usuarios/mixins.py` — `RolRequeridoMixin`, `AnalistaRequeridoMixin`, `InspectorRequeridoMixin`
 - `apps/usuarios/context_processors.py` — inyecta `perfil_usuario`, `es_analista`, `es_inspector`
 - `apps/usuarios/admin.py` — inline en el admin de User + admin independiente de `PerfilUsuario`
+- `apps/usuarios/views.py` — `MiPerfilView`, `MiPerfilEditarView`, `UsuarioListView`, `UsuarioRolEditarView`
+- `apps/usuarios/urls.py` — `/mi-perfil/`, `/mi-perfil/editar/`, `/`, `/<user_pk>/rol/`
 - Navbar actualizado: menú "Evaluaciones" y "Usuarios" solo visibles para analistas
 - Templates: `mi_perfil.html`, `perfil_form.html`, `usuario_list.html`
+
+**✅ Fase 8 — Filtrado dinámico de documentos** *(Completada 2026-03-08)*
+- `apps/documentos/forms.py` — `DocumentoForm` con filtrado dinámico de estudios por persona (HTMX)
+  - Al cambiar persona: `hx-get="/documentos/estudios-por-persona/"` recarga solo estudios de esa persona
+  - Si no hay persona seleccionada: `estudio` queryset vacío
+  - `nombre_archivo` no es requerido (se auto-llena desde el archivo)
+- `apps/documentos/views.py` — `EstudiosPorPersonaView` (retorna `<option>` tags filtradas)
+  - `DocumentoCreateView.form_valid` auto-llena `tamaño` y `nombre_archivo` desde el archivo subido
+- `apps/documentos/urls.py` — nueva URL `documentos/estudios-por-persona/`
 
 ### 4.3 Colores de estado para badges (Tailwind)
 
@@ -1013,10 +1067,11 @@ def form_valid(self, form):
 | 16 | Sistema de roles `PerfilUsuario` (ANA/INS) | ✅ Completada | Multi-perfil |
 | 17 | Notificaciones automáticas con `post_save` signals | ✅ Completada | Automatización |
 | 18 | Badge de notificaciones HTMX en navbar | ✅ Completada | UX |
-| 19 | `apps/auditorias` — modelo y signals | ⬜ Pendiente | Trazabilidad |
-| 20 | `apps/api` — endpoints REST con DRF | ⬜ Pendiente | Integraciones |
-| 21 | Tests automatizados para modelos y vistas | ⬜ Pendiente | Calidad |
-| 22 | Race condition en folio (`select_for_update`) | ⬜ Pendiente | Producción |
+| 19 | Filtrado dinámico documentos por persona (HTMX) | ✅ Completada | UX Documentos |
+| 20 | `apps/auditorias` — modelo y signals | ⬜ Pendiente | Trazabilidad |
+| 21 | `apps/api` — endpoints REST con DRF | ⬜ Pendiente | Integraciones |
+| 22 | Tests automatizados para modelos y vistas | ⬜ Pendiente | Calidad |
+| 23 | Race condition en folio (`select_for_update`) | ⬜ Pendiente | Producción |
 
 ---
 
@@ -1039,15 +1094,15 @@ if settings.DEBUG:
 
 #### Tarea 11 — Método de transición de estado (agregar al modelo)
 ```python
-# En apps/estudios/models.py
+# En apps/estudios/views.py (NO en models.py)
 TRANSICIONES_VALIDAS = {
     'BOR': ['VIS', 'CAN'],
     'VIS': ['PRO', 'CAN'],
     'PRO': ['COM', 'CAN'],
-    'COM': ['REV', 'CAN'],
-    'REV': ['APR', 'REC', 'CAN'],
+    'COM': ['REV'],          # NO permite CAN desde COM
+    'REV': ['APR', 'REC'],   # NO permite CAN desde REV
     'APR': [],
-    'REC': [],
+    'REC': ['BOR'],          # Puede regresar a Borrador para corrección
     'CAN': [],
 }
 
@@ -1145,4 +1200,4 @@ https://docs.google.com/forms/d/e/1FAIpQLSc75Ncb7ON5zEtl2m8kBHuH971DDD7VGQREtdRf
 
 ---
 
-*Versión 1.4 — actualizado el 2026-02-24 tras completar Fase 6 (notificaciones automáticas con signals + HTMX badge) y Fase 7 (sistema de roles PerfilUsuario ANA/INS + mixins de acceso).*
+*Versión 1.5 — actualizado el 2026-03-08 tras: agregar modelo `EmpresaCliente` (configuracion), documentar campo `secciones` JSONField en `TipoEstudio`, corregir `TRANSICIONES_VALIDAS` reales (COM→solo REV, REV→solo APR/REC, REC→BOR), documentar properties `completado`/`expirado` en `EstudioToken`, agregar campos `telefono`/`activo`/`UsuarioRolEditarView` en Fase 7, y documentar Fase 8 (filtrado dinámico documentos con HTMX + auto-llenado de tamaño/nombre_archivo).*
