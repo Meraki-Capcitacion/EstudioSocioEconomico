@@ -135,6 +135,16 @@ class Domicilio(TimestampModel):
         validators=[MinValueValidator(0), MaxValueValidator(11)], null=True, blank=True
     )
 
+    # Coordenadas GPS (capturadas desde el portal del candidato o la visita)
+    latitud = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        verbose_name='Latitud GPS'
+    )
+    longitud = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        verbose_name='Longitud GPS'
+    )
+
     class Meta:
         verbose_name_plural = "Domicilios"
 

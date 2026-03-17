@@ -31,23 +31,31 @@
           </a>
           {% if user.is_authenticated %}
           <div class="hidden md:flex items-center gap-0.5">
+            {% if 'personas' in modulos_permitidos %}
             <a href="{% url 'personas:persona_list' %}"
                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">
               Personas
             </a>
+            {% endif %}
+            {% if 'estudios' in modulos_permitidos %}
             <a href="{% url 'estudios:estudio_list' %}"
                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">
               Estudios
             </a>
+            {% endif %}
+            {% if 'visitas' in modulos_permitidos %}
             <a href="{% url 'visitas:agenda_inspector' %}"
                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">
               Visitas
             </a>
-            {% if es_analista or user.is_superuser %}
+            {% endif %}
+            {% if 'evaluacion' in modulos_permitidos %}
             <a href="{% url 'evaluacion:evaluacionriesgo_list' %}"
                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">
               Evaluaciones
             </a>
+            {% endif %}
+            {% if es_analista or user.is_superuser %}
             <a href="{% url 'usuarios:usuario_list' %}"
                class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700">
               Usuarios

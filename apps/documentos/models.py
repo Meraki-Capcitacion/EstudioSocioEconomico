@@ -19,9 +19,19 @@ class Documento(TimestampModel):
         ('ACT', 'Acta de nacimiento'),
         ('CUR', 'CURP'),
         ('RFC', 'RFC'),
-        ('FOT', 'Fotografía'),
+        # Fotografías específicas
+        ('FSE', 'Fotografía — Selfie / Perfil'),
+        ('FFA', 'Fotografía — Fachada con candidato'),
+        ('FFR', 'Fotografía — Frente de vivienda'),
+        ('FIZ', 'Fotografía — Costado izquierdo'),
+        ('FDE', 'Fotografía — Costado derecho'),
+        ('FDI', 'Fotografía — Interior del domicilio'),
+        ('FOT', 'Fotografía — General'),
         ('OTR', 'Otro'),
     ]
+
+    FOTOS_TIPOS = frozenset({'FSE', 'FFA', 'FFR', 'FIZ', 'FDE', 'FDI', 'FOT'})
+
     tipo = models.CharField(max_length=3, choices=TIPO_DOCUMENTO)
 
     archivo = models.FileField(upload_to='documentos/%Y/%m/%d/')
@@ -37,3 +47,21 @@ class Documento(TimestampModel):
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.persona.nombre_completo}"
+
+    @property
+    def es_foto(self):
+        return self.tipo in self.FOTOS_TIPOS
+
+    @property
+    def etiquetas(self):
+        """Retorna lista de etiquetas derivadas de la persona y el estudio."""
+        tags = []
+        if self.estudio_id:
+            tags.append(f'Estudio #{self.estudio_id}')
+        if self.persona_id:
+            tags.append(self.persona.nombre_completo)
+            if self.persona.rfc:
+                tags.append(self.persona.rfc)
+            if self.persona.curp:
+                tags.append(self.persona.curp)
+        return tags

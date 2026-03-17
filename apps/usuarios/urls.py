@@ -9,4 +9,5 @@ urlpatterns = [
     path('mi-perfil/editar/', views.MiPerfilEditarView.as_view(), name='mi_perfil_editar'),
     path('', views.UsuarioListView.as_view(), name='usuario_list'),
     path('<int:user_pk>/rol/', views.UsuarioRolEditarView.as_view(), name='usuario_rol_editar'),
+    path('<int:user_pk>/permisos/', views.PermisosUsuarioView.as_view(), name='usuario_permisos'),
 ]

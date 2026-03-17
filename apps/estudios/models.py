@@ -22,8 +22,8 @@ class EstudioSocioeconomico(TimestampModel):
         ('PRO', 'En proceso'),
         ('COM', 'Completado'),
         ('REV', 'En revisión'),
-        ('APR', 'Aprobado'),
-        ('REC', 'Rechazado'),
+        ('APR', 'Confiable'),
+        ('REC', 'No confiable'),
         ('CAN', 'Cancelado'),
     ]
     estado = models.CharField(max_length=3, choices=ESTADO_ESTUDIO, default='BOR')

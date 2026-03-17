@@ -22,8 +22,8 @@ from django.views.generic import TemplateView
 
 from .models import EstudioSocioeconomico, EstudioToken
 from .forms_candidato import (
-    Paso1PersonaForm,
-    Paso2DomicilioForm,
+    Paso1PersonaForm, Paso1SelfiForm,
+    Paso2DomicilioForm, Paso2FotoForm, FOTOS_DOMICILIO,
     Paso3EducacionForm, Paso3IdiomaForm, Paso3SaludForm,
     Paso4FamiliarForm,
     Paso5EconomiaForm,
@@ -95,19 +95,24 @@ class PasoBaseView(View):
 
 
 class Paso1View(PasoBaseView):
-    """Paso 1 — Datos personales e identificaciones."""
+    """Paso 1 — Datos personales, identificaciones y selfie."""
     template_name = 'candidato/paso_1.html'
     paso_actual = 1
+
+    def _ctx_paso1(self, tk):
+        persona = tk.estudio.persona
+        ctx = self._contexto_base(tk)
+        ctx['persona'] = persona
+        ctx['selfie'] = persona.documentos.filter(tipo='FSE').first()
+        ctx['form_selfie'] = Paso1SelfiForm()
+        return ctx, persona
 
     def get(self, request, token):
         tk, error = self._validar_token(token)
         if error:
             return redirect('candidato:token_invalido', token=token)
-        persona = tk.estudio.persona
-        form = Paso1PersonaForm(instance=persona)
-        ctx = self._contexto_base(tk)
-        ctx['form'] = form
-        ctx['persona'] = persona
+        ctx, persona = self._ctx_paso1(tk)
+        ctx['form'] = Paso1PersonaForm(instance=persona)
         return render(request, self.template_name, ctx)
 
     def post(self, request, token):
@@ -115,30 +120,68 @@ class Paso1View(PasoBaseView):
         if error:
             return redirect('candidato:token_invalido', token=token)
         persona = tk.estudio.persona
+        accion = request.POST.get('accion', '')
+
+        if accion == 'subir_selfie':
+            form_selfie = Paso1SelfiForm(request.POST, request.FILES)
+            if form_selfie.is_valid() and form_selfie.cleaned_data.get('archivo'):
+                archivo = form_selfie.cleaned_data['archivo']
+                persona.documentos.filter(tipo='FSE').delete()
+                Documento.objects.create(
+                    persona=persona,
+                    estudio=tk.estudio,
+                    tipo='FSE',
+                    archivo=archivo,
+                    nombre_archivo=archivo.name,
+                    tamaño=archivo.size,
+                )
+                messages.success(request, 'Foto de perfil guardada.')
+            return redirect('candidato:paso', token=token, n=1)
+
+        # Guardar datos personales y avanzar
         form = Paso1PersonaForm(request.POST, instance=persona)
         if form.is_valid():
             form.save()
             return redirect('candidato:paso', token=token, n=2)
-        ctx = self._contexto_base(tk)
+        ctx, _ = self._ctx_paso1(tk)
         ctx['form'] = form
-        ctx['persona'] = persona
         return render(request, self.template_name, ctx)
 
 
 class Paso2View(PasoBaseView):
-    """Paso 2 — Domicilio y características del inmueble."""
+    """Paso 2 — Domicilio, ubicación GPS y fotografías del inmueble."""
     template_name = 'candidato/paso_2.html'
     paso_actual = 2
+
+    _TIPOS_FOTOS_DOM = [t for t, _ in FOTOS_DOMICILIO]
+
+    def _ctx_paso2(self, tk):
+        persona = tk.estudio.persona
+        fotos_qs = persona.documentos.filter(
+            tipo__in=self._TIPOS_FOTOS_DOM,
+            estudio=tk.estudio,
+        )
+        fotos_por_tipo_dict = {f.tipo: f for f in fotos_qs}
+        ctx = self._contexto_base(tk)
+        ctx['fotos_por_tipo'] = fotos_por_tipo_dict
+        ctx['fotos_domicilio'] = FOTOS_DOMICILIO
+        # Lista de tuplas (tipo_code, tipo_label, foto_obj_or_None) para uso directo
+        # en el template sin necesidad de filtros personalizados de dict lookup.
+        ctx['fotos_domicilio_ctx'] = [
+            (codigo, label, fotos_por_tipo_dict.get(codigo))
+            for codigo, label in FOTOS_DOMICILIO
+        ]
+        ctx['form_foto'] = Paso2FotoForm()
+        return ctx, persona
 
     def get(self, request, token):
         tk, error = self._validar_token(token)
         if error:
             return redirect('candidato:token_invalido', token=token)
-        persona = tk.estudio.persona
+        ctx, persona = self._ctx_paso2(tk)
         domicilio = persona.domicilios.filter(tipo='ACT').first()
-        form = Paso2DomicilioForm(instance=domicilio)
-        ctx = self._contexto_base(tk)
-        ctx['form'] = form
+        ctx['form'] = Paso2DomicilioForm(instance=domicilio)
+        ctx['domicilio'] = domicilio
         return render(request, self.template_name, ctx)
 
     def post(self, request, token):
@@ -146,6 +189,26 @@ class Paso2View(PasoBaseView):
         if error:
             return redirect('candidato:token_invalido', token=token)
         persona = tk.estudio.persona
+        accion = request.POST.get('accion', '')
+
+        if accion == 'subir_foto':
+            form_foto = Paso2FotoForm(request.POST, request.FILES)
+            if form_foto.is_valid() and form_foto.cleaned_data.get('archivo'):
+                archivo = form_foto.cleaned_data['archivo']
+                tipo = form_foto.cleaned_data['tipo']
+                persona.documentos.filter(tipo=tipo, estudio=tk.estudio).delete()
+                Documento.objects.create(
+                    persona=persona,
+                    estudio=tk.estudio,
+                    tipo=tipo,
+                    archivo=archivo,
+                    nombre_archivo=archivo.name,
+                    tamaño=archivo.size,
+                )
+                messages.success(request, 'Foto guardada correctamente.')
+            return redirect('candidato:paso', token=token, n=2)
+
+        # Guardar domicilio y continuar
         domicilio = persona.domicilios.filter(tipo='ACT').first()
         form = Paso2DomicilioForm(request.POST, instance=domicilio)
         if form.is_valid():
@@ -154,8 +217,9 @@ class Paso2View(PasoBaseView):
             obj.tipo = 'ACT'
             obj.save()
             return redirect('candidato:paso', token=token, n=3)
-        ctx = self._contexto_base(tk)
+        ctx, _ = self._ctx_paso2(tk)
         ctx['form'] = form
+        ctx['domicilio'] = domicilio
         return render(request, self.template_name, ctx)
 
 

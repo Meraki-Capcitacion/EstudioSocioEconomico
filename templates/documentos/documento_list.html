@@ -35,6 +35,11 @@
 <form method="get" class="mb-5">
   <div class="flex flex-wrap gap-3">
     <div class="flex-1 min-w-48">
+      <input type="text" name="q" value="{{ q }}"
+             placeholder="Buscar por candidato, RFC, CURP..."
+             class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+    </div>
+    <div class="flex-1 min-w-48">
       <select name="tipo"
               class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 bg-white">
         <option value="">Todos los tipos</option>
@@ -58,7 +63,7 @@
             onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
       Filtrar
     </button>
-    {% if request.GET.tipo or request.GET.verificado %}
+    {% if request.GET.tipo or request.GET.verificado or request.GET.q %}
     <a href="{% url 'documentos:documento_list' %}"
        class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
       Limpiar
@@ -93,6 +98,22 @@
                class="text-sm text-purple-600 hover:text-purple-800 hover:underline">
               {{ doc.nombre_archivo|default:doc.archivo.name|truncatechars:40 }}
             </a>
+            {% if doc.es_foto %}
+            <div class="mt-1">
+              <img src="{{ doc.archivo.url }}" alt="{{ doc.get_tipo_display }}"
+                   class="h-10 w-10 rounded object-cover border border-gray-200 cursor-pointer"
+                   onclick="window.open('{{ doc.archivo.url }}', '_blank')">
+            </div>
+            {% endif %}
+            {% if doc.etiquetas %}
+            <div class="flex flex-wrap gap-1 mt-1">
+              {% for etiqueta in doc.etiquetas %}
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                {{ etiqueta }}
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
           </td>
           <td class="px-4 py-3 hidden sm:table-cell">
             <a href="{% url 'personas:persona_detail' doc.persona.pk %}"

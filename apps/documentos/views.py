@@ -17,20 +17,32 @@ class DocumentoListView(LoginRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        from django.db.models import Q
+        qs = super().get_queryset().select_related('persona', 'estudio')
         tipo = self.request.GET.get('tipo', '')
         verificado = self.request.GET.get('verificado', '')
+        q = self.request.GET.get('q', '').strip()
         if tipo:
             qs = qs.filter(tipo=tipo)
         if verificado == '1':
             qs = qs.filter(verificado=True)
         elif verificado == '0':
             qs = qs.filter(verificado=False)
+        if q:
+            qs = qs.filter(
+                Q(persona__nombre__icontains=q) |
+                Q(persona__apellido_paterno__icontains=q) |
+                Q(persona__apellido_materno__icontains=q) |
+                Q(persona__rfc__icontains=q) |
+                Q(persona__curp__icontains=q) |
+                Q(nombre_archivo__icontains=q)
+            )
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['tipos_documento'] = Documento.TIPO_DOCUMENTO
+        ctx['q'] = self.request.GET.get('q', '')
         return ctx
 
 

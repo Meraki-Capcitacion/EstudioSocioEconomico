@@ -48,6 +48,8 @@ class Paso2DomicilioForm(forms.ModelForm):
         exclude = ['persona', 'tipo', 'created_at', 'updated_at', 'created_by', 'updated_by']
         widgets = {
             'observaciones_inmueble': forms.Textarea(attrs={'rows': 3}),
+            'latitud': forms.HiddenInput(),
+            'longitud': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -266,7 +268,7 @@ class Paso7DocumentoForm(forms.ModelForm):
             ('TIT', 'Título/Cédula profesional'),
             ('ACT', 'Acta de nacimiento'),
             ('CUR', 'CURP'),
-            ('FOT', 'Fotografía'),
+            ('FOT', 'Fotografía — General'),
             ('OTR', 'Otro documento'),
         ]
 
@@ -275,4 +277,53 @@ class Paso7DocumentoForm(forms.ModelForm):
         if archivo:
             if archivo.size > 10 * 1024 * 1024:  # 10 MB
                 raise ValidationError('El archivo no puede superar los 10 MB.')
+        return archivo
+
+
+# ---------------------------------------------------------------------------
+# Formularios adicionales de fotografías
+# ---------------------------------------------------------------------------
+
+class Paso1SelfiForm(forms.Form):
+    """Paso 1 extra — Foto de perfil / selfie del candidato."""
+    archivo = forms.ImageField(
+        label='Foto de perfil (selfie)',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'accept': 'image/*',
+            'capture': 'user',
+        }),
+    )
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get('archivo')
+        if archivo and archivo.size > 10 * 1024 * 1024:
+            raise ValidationError('La foto no puede superar los 10 MB.')
+        return archivo
+
+
+FOTOS_DOMICILIO = [
+    ('FFA', 'Fachada con el candidato'),
+    ('FFR', 'Frente de la vivienda'),
+    ('FIZ', 'Costado izquierdo'),
+    ('FDE', 'Costado derecho'),
+    ('FDI', 'Interior del domicilio'),
+]
+
+
+class Paso2FotoForm(forms.Form):
+    """Paso 2 extra — Fotos del domicilio (fachada, costados, interior)."""
+    tipo = forms.ChoiceField(choices=FOTOS_DOMICILIO, widget=forms.HiddenInput())
+    archivo = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'accept': 'image/*',
+            'capture': 'environment',
+        }),
+    )
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get('archivo')
+        if archivo and archivo.size > 10 * 1024 * 1024:
+            raise ValidationError('La foto no puede superar los 10 MB.')
         return archivo
