@@ -43,6 +43,7 @@ class EstudioSocioeconomico(TimestampModel):
     )
     MEDIO_ENTERADO = [
         ('FAC', 'Facebook'),
+        ('WSK', 'WhatsApp'),
         ('REF', 'Referencia'),
         ('OTR', 'Otro'),
     ]

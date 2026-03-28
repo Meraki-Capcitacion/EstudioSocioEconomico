@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import DetailView, ListView, UpdateView
 
-from .forms import PerfilUsuarioForm
+from .forms import CrearUsuarioForm, PerfilUsuarioForm
 from .mixins import AnalistaRequeridoMixin, SuperusuarioRequeridoMixin
 from .models import MODULOS_DISPONIBLES, MODULOS_POR_ROL_DEFAULT, PerfilUsuario, PermisoModulo
 
@@ -85,6 +85,25 @@ class UsuarioRolEditarView(AnalistaRequeridoMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Rol del usuario actualizado.')
         return super().form_valid(form)
+
+
+class CrearUsuarioView(SuperusuarioRequeridoMixin, View):
+    """Crear un nuevo usuario del sistema. Solo superusuarios."""
+    template_name = 'usuarios/usuario_create.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {'form': CrearUsuarioForm()})
+
+    def post(self, request):
+        form = CrearUsuarioForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(
+                request,
+                f'Usuario "{user.username}" creado correctamente.',
+            )
+            return redirect('usuarios:usuario_list')
+        return render(request, self.template_name, {'form': form})
 
 
 class PermisosUsuarioView(SuperusuarioRequeridoMixin, View):

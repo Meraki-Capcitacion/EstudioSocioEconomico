@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo usuario — Gestión de usuarios{% endblock %}
+
+{% block breadcrumbs %}
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 text-xs text-gray-500 flex items-center gap-1.5">
+    <a href="{% url 'home' %}" class="hover:text-purple-600">Inicio</a>
+    <span>/</span>
+    <a href="{% url 'usuarios:usuario_list' %}" class="hover:text-purple-600">Usuarios</a>
+    <span>/</span>
+    <span class="text-gray-800 font-medium">Nuevo usuario</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Nuevo usuario</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Crea una cuenta de acceso al sistema.</p>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
+      {% for error in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Datos personales -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="text-sm font-semibold text-gray-800">Datos personales</h2>
+      </div>
+      <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div>
+          <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.first_name.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.first_name }}
+          {% for error in form.first_name.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.last_name.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.last_name }}
+          {% for error in form.last_name.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.email.label }}
+          </label>
+          {{ form.email }}
+          {% for error in form.email.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Acceso al sistema -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-5">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="text-sm font-semibold text-gray-800">Acceso al sistema</h2>
+      </div>
+      <div class="px-5 py-4 space-y-4">
+
+        <div>
+          <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.username.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.username }}
+          <p class="mt-1 text-xs text-gray-400">Solo letras minúsculas, números y guiones bajos. Sin espacios.</p>
+          {% for error in form.username.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.rol.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.rol.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.rol }}
+          {% for error in form.rol.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.password1.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.password1 }}
+          {% for error in form.password1.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ form.password2.label }} <span class="text-red-500">*</span>
+          </label>
+          {{ form.password2 }}
+          {% for error in form.password2.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-between gap-3 pt-2">
+      <a href="{% url 'usuarios:usuario_list' %}"
+         class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm"
+              style="background-color: var(--meraki-purple);"
+              onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+              onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+        Crear usuario
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -12,7 +12,7 @@ class Persona(TimestampModel):
     nombre = models.CharField(max_length=100)
     apellido_paterno = models.CharField(max_length=100)
     apellido_materno = models.CharField(max_length=100, blank=True)
-    fecha_nacimiento = models.DateField()
+    fecha_nacimiento = models.DateField(null=True, blank=True)
     lugar_nacimiento = models.CharField(max_length=200, blank=True, verbose_name='Lugar de nacimiento')
 
     # Identificación oficial
@@ -23,9 +23,9 @@ class Persona(TimestampModel):
         ('CAR', 'Cartilla Militar'),
         ('OTR', 'Otro'),
     ]
-    tipo_identificacion = models.CharField(max_length=3, choices=TIPO_IDENTIFICACION)
-    numero_identificacion = models.CharField(max_length=50)
-    curp = models.CharField(max_length=18, validators=[RegexValidator(r'^[A-Z0-9]{18}$', 'CURP inválida')])
+    tipo_identificacion = models.CharField(max_length=3, choices=TIPO_IDENTIFICACION, blank=True)
+    numero_identificacion = models.CharField(max_length=50, blank=True)
+    curp = models.CharField(max_length=18, blank=True, validators=[RegexValidator(r'^$|^[A-Z0-9]{18}$', 'CURP inválida (debe tener 18 caracteres alfanuméricos en mayúsculas)')])
     rfc = models.CharField(max_length=13, blank=True, validators=[RegexValidator(r'^[A-Z&Ñ]{4}\d{6}[A-Z0-9]{3}$', 'RFC inválido')])
     nss = models.CharField(max_length=11, blank=True, verbose_name='NSS (Número de Seguridad Social)')
     licencia_manejo_folio = models.CharField(max_length=50, blank=True, verbose_name='Folio de licencia de manejo')
@@ -48,7 +48,7 @@ class Persona(TimestampModel):
         ('SEP', 'Separado/a'),
         ('OTR', 'Otro'),
     ]
-    estado_civil = models.CharField(max_length=3, choices=ESTADO_CIVIL)
+    estado_civil = models.CharField(max_length=3, choices=ESTADO_CIVIL, blank=True)
     numero_dependientes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     # Datos físicos
@@ -92,6 +92,14 @@ class Persona(TimestampModel):
         ]
 
     def save(self, *args, **kwargs):
+        # Normalizar nombres a Title Case
+        if self.nombre:
+            self.nombre = self.nombre.strip().title()
+        if self.apellido_paterno:
+            self.apellido_paterno = self.apellido_paterno.strip().title()
+        if self.apellido_materno:
+            self.apellido_materno = self.apellido_materno.strip().title()
+
         if not self.folio:
             # Generar folio único: AÑO-MES-SECUENCIA
             year = timezone.now().strftime('%Y')

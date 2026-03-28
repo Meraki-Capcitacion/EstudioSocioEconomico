@@ -6,7 +6,7 @@
 <h2 class="text-lg font-bold text-gray-900 mb-1">Domicilio y vivienda</h2>
 <p class="text-sm text-gray-500 mb-5">Información sobre tu domicilio actual.</p>
 
-<form method="post" action="{% url 'candidato:paso' token.token 2 %}" novalidate>
+<form id="form-domicilio" method="post" action="{% url 'candidato:paso' token.token 2 %}" novalidate>
   {% csrf_token %}
 
   {% if form.non_field_errors %}
@@ -489,16 +489,13 @@
      class="flex-1 py-4 px-4 text-center text-gray-700 text-base font-semibold rounded-2xl border border-gray-300 bg-white transition-all active:scale-95 hover:bg-gray-50">
     Anterior
   </a>
-  <form method="post" action="{% url 'candidato:paso' token.token 2 %}" class="flex-1">
-    {% csrf_token %}
-    <button type="submit"
-            class="w-full py-4 px-4 text-center text-white text-base font-bold rounded-2xl shadow-md transition-all active:scale-95"
-            style="background-color: var(--meraki-purple);"
-            onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
-            onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
-      Guardar y continuar
-    </button>
-  </form>
+  <button type="submit" form="form-domicilio"
+          class="flex-1 py-4 px-4 text-center text-white text-base font-bold rounded-2xl shadow-md transition-all active:scale-95"
+          style="background-color: var(--meraki-purple);"
+          onmouseover="this.style.backgroundColor='var(--meraki-purple-dark)'"
+          onmouseout="this.style.backgroundColor='var(--meraki-purple)'">
+    Guardar y continuar
+  </button>
 </div>
 <p class="text-center text-xs text-gray-400">Paso 2 de {{ total_pasos }}</p>
 
