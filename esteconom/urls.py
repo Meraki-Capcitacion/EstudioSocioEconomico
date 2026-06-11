@@ -42,6 +42,7 @@ urlpatterns = [
     path('candidato/', include('apps.estudios.urls_candidato')),
     path('reportes/', include('apps.reportes.urls')),
     path('usuarios/', include('apps.usuarios.urls')),
+    path('auditorias/', include('apps.auditorias.urls')),
 ]
 
 if settings.DEBUG:

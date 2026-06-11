@@ -66,6 +66,10 @@ class EstudioDetailView(LoginRequiredMixin, DetailView):
             ctx['token_candidato'] = estudio.token
         except Exception:
             ctx['token_candidato'] = None
+        # Tabs configurables según TipoEstudio.secciones
+        secciones = estudio.tipo_estudio.secciones if estudio.tipo_estudio else []
+        if secciones:
+            ctx['tab_list'] = secciones
         return ctx
 
 

@@ -17,6 +17,7 @@ MODULOS_DISPONIBLES = [
     ('notificaciones', 'Notificaciones'),
     ('reportes', 'Reportes PDF'),
     ('configuracion', 'Configuración'),
+    ('auditorias', 'Auditoría del Sistema'),
 ]
 
 _TODOS_LOS_MODULOS = {m[0] for m in MODULOS_DISPONIBLES}

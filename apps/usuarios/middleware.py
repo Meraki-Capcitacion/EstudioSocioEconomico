@@ -16,6 +16,7 @@ MODULO_POR_PREFIJO = {
     '/notificaciones/': 'notificaciones',
     '/reportes/': 'reportes',
     '/configuracion/': 'configuracion',
+    '/auditorias/': 'auditorias',
 }
 
 

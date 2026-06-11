@@ -290,6 +290,7 @@ class Paso3View(PasoBaseView):
                     'form_salud': Paso3SaludForm(instance=salud),
                     'educacion_list': persona.educacion.all(),
                     'idioma_list': persona.idiomas.all(),
+                    'salud': salud,
                 })
                 return render(request, self.template_name, ctx)
 

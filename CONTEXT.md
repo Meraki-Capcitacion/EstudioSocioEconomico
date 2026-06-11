@@ -1433,7 +1433,7 @@ path('api/', include('apps.api.urls')),
 | `DATABASE_URL` | No | SQLite local | URL de conexión PostgreSQL |
 | `GOOGLE_MAPAS_API_KEY` | No | `''` | API key de Google Maps Static API (croquis PDF) |
 | `MAPBOX_API_KEY` | No | `''` | Access token de Mapbox Static Images (croquis PDF) |
-| `ANTHROPIC_API_KEY` | No | `''` | API key de Anthropic para análisis IA con Claude Haiku |
+| `DO_MODEL_ACCESS_KEY` | No | `''` | API key de DigitalOcean AI (endpoint OpenAI-compatible, modelo Llama 4 Maverick) |
 | `USE_SPACES` | No | `False` | Activar S3/Digital Ocean Spaces para archivos |
 | `AWS_ACCESS_KEY_ID` | Si (Spaces) | — | Access key del bucket S3/Spaces |
 | `AWS_SECRET_ACCESS_KEY` | Si (Spaces) | — | Secret key del bucket S3/Spaces |
@@ -1452,8 +1452,8 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 # GOOGLE_MAPS_API_KEY=AIzaSy...
 # MAPBOX_API_KEY=pk.eyJ1...
 
-# IA — Análisis automático con Claude (Anthropic)
-ANTHROPIC_API_KEY=sk-ant-api03-...
+# IA — Análisis automático con DigitalOcean AI (OpenAI-compatible)
+# DO_MODEL_ACCESS_KEY=...
 ```
 
 ---

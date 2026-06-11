@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.utils import timezone
 
@@ -101,20 +101,23 @@ class Persona(TimestampModel):
             self.apellido_materno = self.apellido_materno.strip().title()
 
         if not self.folio:
-            # Generar folio único: AÑO-MES-SECUENCIA
-            year = timezone.now().strftime('%Y')
-            month = timezone.now().strftime('%m')
-            last_study = Persona.objects.filter(
-                folio__startswith=f'{year}{month}'
-            ).order_by('-folio').first()
+            with transaction.atomic():
+                year = timezone.now().strftime('%Y')
+                month = timezone.now().strftime('%m')
+                last_study = (
+                    Persona.objects
+                    .select_for_update()
+                    .filter(folio__startswith=f'{year}{month}')
+                    .order_by('-folio')
+                    .first()
+                )
+                if last_study:
+                    last_sequence = int(last_study.folio[-4:])
+                    new_sequence = str(last_sequence + 1).zfill(4)
+                else:
+                    new_sequence = '0001'
 
-            if last_study:
-                last_sequence = int(last_study.folio[-4:])
-                new_sequence = str(last_sequence + 1).zfill(4)
-            else:
-                new_sequence = '0001'
-
-            self.folio = f'{year}{month}{new_sequence}'
+                self.folio = f'{year}{month}{new_sequence}'
 
         super().save(*args, **kwargs)
 
