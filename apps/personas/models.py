@@ -102,21 +102,19 @@ class Persona(TimestampModel):
 
         if not self.folio:
             with transaction.atomic():
+                from django.db import connection as _conn
+                if _conn.vendor == 'postgresql':
+                    with _conn.cursor() as cur:
+                        cur.execute('SELECT pg_advisory_xact_lock(9876543210)')
                 year = timezone.now().strftime('%Y')
                 month = timezone.now().strftime('%m')
-                last_study = (
+                last = (
                     Persona.objects
-                    .select_for_update()
                     .filter(folio__startswith=f'{year}{month}')
                     .order_by('-folio')
                     .first()
                 )
-                if last_study:
-                    last_sequence = int(last_study.folio[-4:])
-                    new_sequence = str(last_sequence + 1).zfill(4)
-                else:
-                    new_sequence = '0001'
-
+                new_sequence = str(int(last.folio[-4:]) + 1).zfill(4) if last else '0001'
                 self.folio = f'{year}{month}{new_sequence}'
 
         super().save(*args, **kwargs)

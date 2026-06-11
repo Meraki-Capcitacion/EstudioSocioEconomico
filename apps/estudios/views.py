@@ -12,6 +12,20 @@ from .forms import EstudioSocioeconomicoForm
 from .models import EstudioSocioeconomico
 
 
+SECCION_LABELS = {
+    'resumen': 'Resumen',
+    'domicilio': 'Domicilio',
+    'laboral': 'Laboral',
+    'familia': 'Familia',
+    'economia': 'Economía',
+    'referencias': 'Referencias',
+    'educacion': 'Educación',
+    'evaluacion': 'Evaluación',
+    'documentos': 'Documentos',
+    'visitas': 'Visitas',
+    'candidato': 'Candidato',
+}
+
 TRANSICIONES_VALIDAS = {
     'BOR': ['VIS', 'CAN'],
     'VIS': ['PRO', 'CAN'],
@@ -69,7 +83,11 @@ class EstudioDetailView(LoginRequiredMixin, DetailView):
         # Tabs configurables según TipoEstudio.secciones
         secciones = estudio.tipo_estudio.secciones if estudio.tipo_estudio else []
         if secciones:
-            ctx['tab_list'] = secciones
+            ctx['tab_list'] = [
+                (s, SECCION_LABELS.get(s, s.replace('_', ' ').title()))
+                for s in secciones
+                if isinstance(s, str)
+            ]
         return ctx
 
 
