@@ -45,6 +45,10 @@ class TipoEstudio(models.Model):
     ]
     SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
 
+    # Pestaña sintética: siempre se muestra y no es configurable por tipo.
+    SECCION_RESUMEN = ('resumen', 'Resumen')
+
+
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
 
@@ -76,3 +80,32 @@ class TipoEstudio(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @classmethod
+    def etiquetas_secciones(cls):
+        """Mapa clave -> etiqueta de las secciones válidas."""
+        return dict(cls.SECCIONES_DISPONIBLES)
+
+    @classmethod
+    def tabs_por_defecto(cls):
+        """Pestañas usadas cuando el estudio no tiene tipo asignado."""
+        return [cls.SECCION_RESUMEN] + list(cls.SECCIONES_DISPONIBLES)
+
+    def tabs(self):
+        """
+        Pestañas del expediente como lista de tuplas (clave, etiqueta).
+
+        Las claves salen siempre de SECCIONES_DISPONIBLES, que es el
+        vocabulario canónico: la plantilla nombra sus paneles con esas
+        mismas claves (id="tab-<clave>"). Cualquier valor guardado en
+        `secciones` que no exista en el catálogo se descarta, para que un
+        dato viejo o mal escrito no produzca una pestaña sin panel.
+        """
+        etiquetas = self.etiquetas_secciones()
+        claves = [
+            s for s in (self.secciones or [])
+            if isinstance(s, str) and s in etiquetas
+        ]
+        if not claves:
+            return self.tabs_por_defecto()
+        return [self.SECCION_RESUMEN] + [(c, etiquetas[c]) for c in claves]

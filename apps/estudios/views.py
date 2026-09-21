@@ -8,23 +8,11 @@ from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
 )
 
+from apps.configuracion.models import TipoEstudio
+
 from .forms import EstudioSocioeconomicoForm
 from .models import EstudioSocioeconomico
 
-
-SECCION_LABELS = {
-    'resumen': 'Resumen',
-    'domicilio': 'Domicilio',
-    'laboral': 'Laboral',
-    'familia': 'Familia',
-    'economia': 'Economía',
-    'referencias': 'Referencias',
-    'educacion': 'Educación',
-    'evaluacion': 'Evaluación',
-    'documentos': 'Documentos',
-    'visitas': 'Visitas',
-    'candidato': 'Candidato',
-}
 
 TRANSICIONES_VALIDAS = {
     'BOR': ['VIS', 'CAN'],
@@ -72,7 +60,7 @@ class EstudioDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        estudio = self.get_object()
+        estudio = self.object
         ctx['transiciones_validas'] = TRANSICIONES_VALIDAS.get(estudio.estado, [])
         ctx['estados_display'] = dict(EstudioSocioeconomico.ESTADO_ESTUDIO)
         # Token del candidato (Fase 3 — Portal de autogestión)
@@ -80,14 +68,13 @@ class EstudioDetailView(LoginRequiredMixin, DetailView):
             ctx['token_candidato'] = estudio.token
         except Exception:
             ctx['token_candidato'] = None
-        # Tabs configurables según TipoEstudio.secciones
-        secciones = estudio.tipo_estudio.secciones if estudio.tipo_estudio else []
-        if secciones:
-            ctx['tab_list'] = [
-                (s, SECCION_LABELS.get(s, s.replace('_', ' ').title()))
-                for s in secciones
-                if isinstance(s, str)
-            ]
+        # Tabs configurables según TipoEstudio.secciones.
+        # tab_list siempre viene poblada, así la plantilla no necesita
+        # una lista de pestañas duplicada como respaldo.
+        if estudio.tipo_estudio:
+            ctx['tab_list'] = estudio.tipo_estudio.tabs()
+        else:
+            ctx['tab_list'] = TipoEstudio.tabs_por_defecto()
         return ctx
 
 

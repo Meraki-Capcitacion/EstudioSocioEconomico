@@ -289,5 +289,8 @@ db.sqlite3-limpia
 AGENTES.md
 CLAUDE.md
 .env
+.docs
+.playwright-mcp
+.venvEstudioEcoNom
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python,django

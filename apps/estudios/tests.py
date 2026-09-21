@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from django.contrib.auth.models import User
@@ -199,3 +200,105 @@ class TestGenerarTokenView(TestCase):
         self.assertFalse(EstudioToken.objects.filter(token=uuid_anterior).exists())
         # Existe uno nuevo
         self.assertTrue(EstudioToken.objects.filter(estudio=estudio).exists())
+
+
+# ---------------------------------------------------------------------------
+# Tests de coherencia de pestañas del expediente
+# ---------------------------------------------------------------------------
+
+def _tabs_renderizadas(html):
+    """
+    Devuelve (claves de los botones, claves de los paneles) del detalle.
+
+    Los botones se leen solo dentro de <nav>, porque más abajo el bloque
+    de JavaScript también contiene la cadena `data-tab=` dentro de
+    selectores construidos en tiempo de ejecución.
+    """
+    nav = re.search(
+        r'<nav\b[^>]*aria-label="Secciones del estudio".*?</nav>', html, re.DOTALL
+    )
+    botones = set(re.findall(r'data-tab="([^"]+)"', nav.group(0) if nav else ''))
+    paneles = set(re.findall(r'id="tab-([^"]+)"', html))
+    return botones, paneles
+
+
+@SIMPLE_STORAGE
+class TestTabsExpediente(TestCase):
+    """
+    Protege el contrato entre la vista y la plantilla: cada botón
+    `data-tab="X"` necesita un panel `id="tab-X"`. Cuando ambos se
+    desincronizan, la pestaña se abre vacía sin ningún error visible,
+    que es exactamente el fallo que este test evita que regrese.
+    """
+
+    def setUp(self):
+        self.usuario = _crear_usuario()
+        self.client.login(username='analista', password='testpass123')
+
+    def _html_detalle(self, estudio):
+        url = reverse('estudios:estudio_detail', kwargs={'pk': estudio.pk})
+        return self.client.get(url).content.decode()
+
+    def test_cada_boton_tiene_su_panel(self):
+        estudio = _crear_estudio(sufijo='20')
+        estudio.tipo_estudio.secciones = [
+            clave for clave, _ in TipoEstudio.SECCIONES_DISPONIBLES
+        ]
+        estudio.tipo_estudio.save()
+
+        botones, paneles = _tabs_renderizadas(self._html_detalle(estudio))
+
+        self.assertTrue(botones, 'La plantilla no renderizó ningún botón de pestaña')
+        self.assertEqual(
+            botones - paneles, set(),
+            'Hay botones de pestaña sin su panel correspondiente',
+        )
+
+    def test_toda_seccion_del_catalogo_tiene_panel(self):
+        """Ninguna sección configurable puede quedarse sin panel."""
+        estudio = _crear_estudio(sufijo='21')
+        estudio.tipo_estudio.secciones = [
+            clave for clave, _ in TipoEstudio.SECCIONES_DISPONIBLES
+        ]
+        estudio.tipo_estudio.save()
+
+        _, paneles = _tabs_renderizadas(self._html_detalle(estudio))
+        catalogo = {clave for clave, _ in TipoEstudio.SECCIONES_DISPONIBLES}
+
+        self.assertEqual(catalogo - paneles, set())
+
+    def test_tab_list_respeta_las_secciones_configuradas(self):
+        estudio = _crear_estudio(sufijo='22')
+        estudio.tipo_estudio.secciones = ['domicilios', 'economia']
+        estudio.tipo_estudio.save()
+
+        url = reverse('estudios:estudio_detail', kwargs={'pk': estudio.pk})
+        tab_list = self.client.get(url).context['tab_list']
+
+        self.assertEqual([clave for clave, _ in tab_list],
+                         ['resumen', 'domicilios', 'economia'])
+
+    def test_seccion_desconocida_se_descarta(self):
+        """Un valor obsoleto en `secciones` no debe generar una pestaña rota."""
+        estudio = _crear_estudio(sufijo='23')
+        estudio.tipo_estudio.secciones = ['domicilio', 'economico', 'familia']
+        estudio.tipo_estudio.save()
+
+        url = reverse('estudios:estudio_detail', kwargs={'pk': estudio.pk})
+        response = self.client.get(url)
+        claves = [clave for clave, _ in response.context['tab_list']]
+
+        self.assertEqual(claves, ['resumen', 'familia'])
+        botones, paneles = _tabs_renderizadas(response.content.decode())
+        self.assertEqual(botones - paneles, set())
+
+    def test_sin_secciones_muestra_todas_las_pestanas(self):
+        estudio = _crear_estudio(sufijo='24')
+        estudio.tipo_estudio.secciones = []
+        estudio.tipo_estudio.save()
+
+        url = reverse('estudios:estudio_detail', kwargs={'pk': estudio.pk})
+        claves = [c for c, _ in self.client.get(url).context['tab_list']]
+        catalogo = [clave for clave, _ in TipoEstudio.SECCIONES_DISPONIBLES]
+
+        self.assertEqual(claves, ['resumen'] + catalogo)

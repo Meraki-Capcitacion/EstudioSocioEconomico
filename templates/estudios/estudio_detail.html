@@ -115,29 +115,12 @@
             onclick="cambiarPestana('{{ tab_id }}')"
             {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
       {{ tab_label }}
-    </button>
-    {% empty %}
-    <button data-tab="resumen" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-purple-600 text-purple-700 whitespace-nowrap" onclick="cambiarPestana('resumen')" aria-selected="true">Resumen</button>
-    <button data-tab="domicilio" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('domicilio')" aria-selected="false">Domicilio</button>
-    <button data-tab="educacion" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('educacion')" aria-selected="false">Educación</button>
-    <button data-tab="salud" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('salud')" aria-selected="false">Salud</button>
-    <button data-tab="familia" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('familia')" aria-selected="false">Familia</button>
-    <button data-tab="laboral" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('laboral')" aria-selected="false">Laboral</button>
-    <button data-tab="economico" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('economico')" aria-selected="false">Económico</button>
-    <button data-tab="referencias" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('referencias')" aria-selected="false">Referencias</button>
-    <button data-tab="visitas" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('visitas')" aria-selected="false">Visitas</button>
-    <button data-tab="documentos" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('documentos')" aria-selected="false">Documentos</button>
-    <button data-tab="evaluacion" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap" onclick="cambiarPestana('evaluacion')" aria-selected="false">Evaluación</button>
-    <button data-tab="candidato" class="tab-btn px-3 py-3 text-xs font-medium border-b-2 border-transparent whitespace-nowrap transition-colors
-      {% if token_candidato and token_candidato.activo and not token_candidato.vigente and token_candidato.completado %}text-green-600 hover:text-green-700 hover:border-green-400
-      {% elif token_candidato and token_candidato.vigente %}text-blue-600 hover:text-blue-700 hover:border-blue-400
-      {% else %}text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %}"
-      onclick="cambiarPestana('candidato')" aria-selected="false">
-      Portal candidato
-      {% if token_candidato and token_candidato.activo and not token_candidato.vigente and token_candidato.completado %}
-      <span class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500"></span>
-      {% elif token_candidato and token_candidato.vigente %}
-      <span class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+      {% if tab_id == 'candidato' %}
+        {% if token_candidato and token_candidato.activo and not token_candidato.vigente and token_candidato.completado %}
+        <span class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500"></span>
+        {% elif token_candidato and token_candidato.vigente %}
+        <span class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+        {% endif %}
       {% endif %}
     </button>
     {% endfor %}
@@ -274,7 +257,7 @@
 </div>
 
 <!-- TAB: Domicilio -->
-<div id="tab-domicilio" class="tab-content hidden">
+<div id="tab-domicilios" class="tab-content hidden">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-base font-semibold text-gray-900">Domicilios</h2>
     <a href="{% url 'domicilios:domicilio_create' %}?persona={{ estudio.persona.pk }}&back={{ estudio.pk }}"
@@ -595,7 +578,7 @@
 </div>
 
 <!-- TAB: Económico -->
-<div id="tab-economico" class="tab-content hidden">
+<div id="tab-economia" class="tab-content hidden">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-base font-semibold text-gray-900">Situación económica</h2>
     {% if not estudio.situacion_economica %}
@@ -1242,10 +1225,39 @@
 
 {% block extra_js %}
 <script>
-var TABS = ['resumen', 'domicilio', 'educacion', 'salud', 'familia', 'laboral', 'economico', 'referencias', 'visitas', 'documentos', 'evaluacion', 'candidato'];
+// Las pestañas se descubren del DOM en vez de mantener una lista fija aquí.
+// Una lista fija se desincroniza en silencio cuando cambian las secciones;
+// esto siempre refleja los paneles que la plantilla realmente renderizó.
+var CLAVE_TAB = 'estudio-tab-{{ estudio.pk }}';
+
+function tabsDisponibles() {
+  var paneles = document.querySelectorAll('.tab-content[id^="tab-"]');
+  return Array.prototype.map.call(paneles, function(panel) {
+    return panel.id.slice(4);
+  });
+}
+
+// Avisa en consola si algún botón apunta a un panel inexistente.
+function verificarTabs(tabs) {
+  var botones = document.querySelectorAll('.tab-btn[data-tab]');
+  Array.prototype.forEach.call(botones, function(boton) {
+    var destino = boton.getAttribute('data-tab');
+    if (tabs.indexOf(destino) < 0) {
+      console.warn('Pestaña sin panel: data-tab="' + destino +
+                   '" no tiene un elemento con id="tab-' + destino + '".');
+    }
+  });
+}
 
 function cambiarPestana(nombrePestana) {
-  TABS.forEach(function(tab) {
+  var tabs = tabsDisponibles();
+  if (tabs.indexOf(nombrePestana) < 0) {
+    console.warn('Pestaña desconocida: "' + nombrePestana + '". Se abre "resumen".');
+    nombrePestana = tabs.indexOf('resumen') >= 0 ? 'resumen' : tabs[0];
+    if (!nombrePestana) return;
+  }
+
+  tabs.forEach(function(tab) {
     var contenido = document.getElementById('tab-' + tab);
     if (contenido) contenido.classList.add('hidden');
     var boton = document.querySelector('[data-tab="' + tab + '"]');
@@ -1265,14 +1277,28 @@ function cambiarPestana(nombrePestana) {
     botonActivo.setAttribute('aria-selected', 'true');
   }
 
-  sessionStorage.setItem('estudio-tab-{{ estudio.pk }}', nombrePestana);
+  sessionStorage.setItem(CLAVE_TAB, nombrePestana);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Verificar si se pasó un tab en el hash de la URL
+  var tabs = tabsDisponibles();
+  verificarTabs(tabs);
+
   var hash = window.location.hash.replace('#', '');
-  var tabGuardada = sessionStorage.getItem('estudio-tab-{{ estudio.pk }}');
-  var tabInicial = hash && TABS.indexOf(hash) >= 0 ? hash : (tabGuardada || 'resumen');
+  var tabGuardada = sessionStorage.getItem(CLAVE_TAB);
+
+  // El valor guardado se valida contra los paneles actuales: si la
+  // configuración del tipo de estudio cambió, un valor viejo dejaría la
+  // vista en blanco en cada recarga.
+  var tabInicial = 'resumen';
+  if (hash && tabs.indexOf(hash) >= 0) {
+    tabInicial = hash;
+  } else if (tabGuardada && tabs.indexOf(tabGuardada) >= 0) {
+    tabInicial = tabGuardada;
+  } else if (tabGuardada) {
+    sessionStorage.removeItem(CLAVE_TAB);
+  }
+
   cambiarPestana(tabInicial);
 });
 
