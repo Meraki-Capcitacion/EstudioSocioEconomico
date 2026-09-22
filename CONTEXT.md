@@ -1,7 +1,7 @@
 # Documento de Contexto Arquitectónico — EstudioEcoNom
 
-**Versión:** 2.3
-**Fecha:** 2026-04-27
+**Versión:** 3.0
+**Fecha:** 2026-09-21
 **Proyecto:** Sistema de Gestión de Estudios Socioeconómicos (EstudioEcoNom)
 **Stack:** Django 6.0.2 · SQLite/PostgreSQL · Tailwind CSS CDN · WeasyPrint · Python 3.x
 **Idioma:** Español mexicano (`es-mx`) · Zona horaria: `America/Mexico_City`
@@ -36,6 +36,7 @@ Cambios que SIEMPRE requieren actualización de este archivo:
 4. [Plan de Implementación Frontend](#4-plan-de-implementación-frontend)
 5. [Guía para Otros Agentes](#5-guía-para-otros-agentes)
 6. [Próximos Pasos Concretos](#6-próximos-pasos-concretos)
+7. [Estado de la Suite de Tests](#7-estado-de-la-suite-de-tests)
 
 ---
 
@@ -71,7 +72,8 @@ apps/
 ├── documentos/               ← FK a Persona + FK a EstudioSocioeconomico
 ├── notificaciones/           ← FK a User + FK a EstudioSocioeconomico
 │
-├── auditorias/               ← PLACEHOLDER (models.py vacío)
+├── auditorias/               ← IMPLEMENTADO: RegistroAuditoria + signals + middleware
+│                                (registra CRE/MOD/ELI/CAM/VER de 6 modelos)
 ├── reportes/                 ← IMPLEMENTADO: GenerarReportePDFView + VistaPreviewReporteView
 └── api/                      ← PLACEHOLDER (models.py vacío)
 ```
@@ -208,9 +210,15 @@ Django built-in (admin, auth, contenttypes, sessions, messages, staticfiles) + a
 4. `CommonMiddleware`
 5. `CsrfViewMiddleware`
 6. `AuthenticationMiddleware`
-7. `MessageMiddleware`
-8. `XFrameOptionsMiddleware`
-9. **`apps.usuarios.middleware.ModuloPermisosMiddleware`** (custom — después de Auth)
+7. **`apps.auditorias.middleware.AuditoriaMiddleware`** (custom — entre Auth y Message)
+8. `MessageMiddleware`
+9. `XFrameOptionsMiddleware`
+10. **`apps.usuarios.middleware.ModuloPermisosMiddleware`** (custom — después de Auth)
+
+> `AuditoriaMiddleware` guarda el `request` en un `threading.local()` para que los
+> signals de `auditorias` puedan resolver el usuario y la IP sin acoplarse a las vistas.
+> Si un `save()` ocurre fuera de un request (shell, comando, migración), el registro
+> queda con `usuario=None` y se muestra como "Sistema".
 
 **Context Processors registrados:**
 1. `django.template.context_processors.debug/request`
@@ -232,8 +240,12 @@ Django built-in (admin, auth, contenttypes, sessions, messages, staticfiles) + a
 - Si `DATABASE_URL` definida → PostgreSQL (`dj_database_url.parse`)
 - Por defecto → SQLite `db.sqlite3`
 
+**Variables de entorno:** gestionadas con `python-decouple` desde `.env`.
+`SECRET_KEY` es la única sin valor por defecto — sin ella ningún comando de `manage.py`
+arranca. Listado completo en el **Apéndice C**.
+
 **`esteconom/urls.py`** — prefijos de URL:
-`/admin/`, `/accounts/`, `/configuracion/`, `/personas/`, `/estudios/`, `/domicilios/`, `/economia/`, `/educacion/`, `/laboral/`, `/familia/`, `/referencias/`, `/visitas/`, `/evaluacion/`, `/documentos/`, `/notificaciones/`, `/candidato/` (portal público), `/reportes/`, `/usuarios/`
+`/admin/`, `/accounts/`, `/configuracion/`, `/personas/`, `/estudios/`, `/domicilios/`, `/economia/`, `/educacion/`, `/laboral/`, `/familia/`, `/referencias/`, `/visitas/`, `/evaluacion/`, `/documentos/`, `/notificaciones/`, `/candidato/` (portal público), `/reportes/`, `/usuarios/`, `/auditorias/`
 
 Media files (`DEBUG=True`): `/media/` → `MEDIA_ROOT`
 
@@ -285,7 +297,31 @@ SECCIONES_DISPONIBLES = [
     ('documentos', 'Documentos'),
 ]
 SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
+SECCION_RESUMEN = ('resumen', 'Resumen')   # pestaña sintética, no configurable
 ```
+
+**`SECCIONES_DISPONIBLES` es el vocabulario canónico de las pestañas del expediente.**
+Sus claves son las mismas que la plantilla usa para nombrar sus paneles
+(`id="tab-<clave>"`). Nada más debe definir esa lista: vistas, plantilla y JavaScript
+la consumen, no la reescriben.
+
+**Métodos de `TipoEstudio`** (`apps/configuracion/models.py:83-111`):
+
+| Método | Tipo | Devuelve |
+|--------|------|----------|
+| `etiquetas_secciones()` | classmethod | `dict` clave → etiqueta |
+| `tabs_por_defecto()` | classmethod | `resumen` + catálogo completo; se usa cuando el estudio no tiene `tipo_estudio` |
+| `tabs()` | instancia | `resumen` + las secciones configuradas, **filtradas contra el catálogo** |
+
+`tabs()` descarta cualquier clave de `secciones` que no exista en el catálogo. Es una
+defensa deliberada: un valor obsoleto en el JSONField generaría un botón de pestaña sin
+panel, y la pestaña se abriría vacía sin ningún error visible. Si tras filtrar no queda
+ninguna sección, devuelve el catálogo completo en lugar de una barra vacía.
+
+> **Contrato protegido por tests.** `TestTabsExpediente` (`apps/estudios/tests.py:226`,
+> 5 tests) afirma que cada `data-tab="X"` renderizado tiene su `id="tab-X"`.
+> Si alguien añade una sección al catálogo sin añadir el panel a
+> `templates/estudios/estudio_detail.html`, la suite falla.
 
 **Notas especiales:**
 - `TipoEstudio` NO hereda de `TimestampModel` (tiene sus propios `created_at`, `updated_at` sin campos `_by`)
@@ -334,13 +370,22 @@ SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
 
 **Property:** `nombre_completo` → `"{nombre} {apellido_paterno} {apellido_materno}".strip()`
 
-**Algoritmo de folio:**
+**Algoritmo de folio** (`apps/personas/models.py:103-118`):
 ```python
-# Formato: YYYYMMNNNNN (ejemplo: 202602000 1)
+# Formato: YYYYMM + 4 dígitos (ejemplo: 2026020001)
 # Busca el último folio del mes actual, incrementa en 1
 # Si no existe, inicia con '0001'
-# ADVERTENCIA: No usa transacción atómica — posible race condition en producción
+# Todo el bloque corre dentro de transaction.atomic()
+# En PostgreSQL toma además pg_advisory_xact_lock(9876543210) antes de
+# calcular la secuencia, para serializar los inserts concurrentes.
 ```
+
+> **Corregido en v3.0.** Hasta v2.3 este documento advertía que el folio no usaba
+> transacción atómica. Ya no es cierto. La protección contra colisiones por
+> concurrencia solo es completa en PostgreSQL: en SQLite el `advisory lock` no
+> existe y la garantía se reduce a la del propio `atomic()`.
+> Cubierto por `TestPersonaFolioConcurrencia` (`apps/personas/tests.py:73`,
+> usa `TransactionTestCase`).
 
 **Índices de base de datos:** `folio`, `curp`, `(apellido_paterno, apellido_materno, nombre)`
 
@@ -389,7 +434,23 @@ SECCIONES_OBLIGATORIAS = frozenset({'candidato', 'evaluacion'})
 
 **NOTA IMPORTANTE:** El campo `estado` se transiciona manualmente. No hay lógica de transición automática ni validación de estados permitidos en el modelo — esto debe implementarse en las vistas o en un método `transicionar(nuevo_estado)`.
 
-**URLs:** `estudios:estudio_list/create/detail/update/delete`, `estudios:cambiar_estado`, `estudios:generar_token`, `estudios:regenerar_token`
+**URLs:** `estudios:estudio_list/create/detail/update/delete`, `estudios:cambiar_estado`, `estudios:generar_token`, `estudios:regenerar_token`, `estudios:analizar_ia`, `estudios:evaluar_ia`
+
+**`EstudioDetailView.get_context_data()`** inyecta:
+
+| Clave | Origen |
+|-------|--------|
+| `transiciones_validas` | `TRANSICIONES_VALIDAS[estudio.estado]` |
+| `estados_display` | `dict(ESTADO_ESTUDIO)` |
+| `token_candidato` | `estudio.token` o `None` |
+| `tab_list` | `estudio.tipo_estudio.tabs()`, o `TipoEstudio.tabs_por_defecto()` si no hay tipo |
+
+`tab_list` **siempre viene poblada**. La plantilla no necesita —ni debe tener— una lista
+de pestañas de respaldo: una segunda lista escrita a mano es exactamente lo que se
+desincroniza y produce pestañas vacías.
+
+Usa `self.object`, no `self.get_object()`: `DetailView` ya resolvió el objeto y volver a
+llamarlo dispara una segunda consulta idéntica.
 
 ---
 
@@ -852,7 +913,19 @@ Reúne toda la información del estudio en texto estructurado para el prompt. In
 
 **Modelo activo:** `meta-llama/Llama-4-Maverick-17B-128E-Instruct` — configurable en `DO_AI_MODEL` en `views_ia.py`.
 
-**Manejo de errores:** captura `openai.APIError` y `json.JSONDecodeError`, retorna JSON con clave `error`.
+**Manejo de errores** (códigos HTTP reales que devuelven ambas vistas):
+
+| Situación | Código | Detalle |
+|-----------|--------|---------|
+| `DO_MODEL_ACCESS_KEY` vacía o ausente | `503` | No se llama al modelo; el proyecto funciona sin la clave, solo sin IA |
+| `json.JSONDecodeError` | `500` | El modelo devolvió algo que no es el JSON esperado |
+| `openai.APIError` | `502` | Fallo de la API remota |
+
+Ambas vistas aceptan **solo POST**.
+
+**Cobertura de tests:** `apps/estudios/tests_ia.py` — 7 tests en `TestAnalizarEstudioIAView` (:39)
+y `TestSugerirEvaluacionIAView` (:110). Usan `unittest.mock.patch` sobre la fábrica del
+cliente, así que **no consumen API ni requieren clave** para correr.
 
 **Cambios en `apps/evaluacion/views.py`:**
 - `EvaluacionRiesgoCreateView.get_context_data` → pasa `estudio_pk_ia` desde `?estudio=` o `?back=` en la URL
@@ -1012,10 +1085,69 @@ Cuando un perfil tiene registros en `PermisoModulo`, estos sobreescriben los per
 
 ---
 
-### 2.16 `auditorias`, `api` — Placeholders
+### 2.16 `auditorias` — Registro de Auditoría Automático
 
-- **`auditorias`:** Sin urls.py propio — no está en `esteconom/urls.py`. Destinada a log de cambios con `post_save` signals.
-- **`api`:** Sin urls.py propio. Destinada a endpoints REST con Django REST Framework.
+> **Cambio estructural en v3.0.** Hasta v2.3 esta app figuraba como placeholder.
+> Está implementada por completo desde el commit `4410ab3f` (2026-06-11).
+> Único archivo aún vacío: `apps/auditorias/tests.py`.
+
+**Modelo `RegistroAuditoria`** (`apps/auditorias/models.py:6`)
+
+Es la única excepción documentada al patrón general: **no hereda de `TimestampModel`**.
+Define su propio `created_at` y no lleva `updated_at` ni campos `_by`, porque un
+registro de auditoría se escribe una vez y no se modifica nunca.
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `usuario` | FK(User), SET_NULL, null | `related_name='auditorias'`; null = acción sin request (shell, comando) |
+| `accion` | CharField(3), choices | `CRE` Creó · `MOD` Modificó · `ELI` Eliminó · `CAM` Cambió estado · `VER` Verificó |
+| `modelo` | CharField(100) | Nombre de la clase auditada |
+| `objeto_id` | PositiveIntegerField | |
+| `descripcion` | TextField | |
+| `datos_antes` | JSONField, null | Estado previo |
+| `datos_despues` | JSONField, null | Estado posterior |
+| `ip_address` | GenericIPAddressField, null | De `request.META['REMOTE_ADDR']` |
+| `created_at` | DateTimeField, auto_now_add | |
+
+`Meta`: `ordering=['-created_at']` + 3 índices — `(modelo, objeto_id)`, `(usuario)`, `(-created_at)`.
+Migración: `apps/auditorias/migrations/0001_initial.py`.
+
+**Cómo captura al actor.** La app no toca las vistas. `AuditoriaMiddleware`
+(`apps/auditorias/middleware.py`) deja el `request` en un `threading.local()`; el helper
+`_registrar()` (`apps/auditorias/signals.py:12`) lo recupera para resolver usuario e IP.
+
+**Modelos auditados y eventos** (`apps/auditorias/signals.py`):
+
+| Modelo | Evento registrado |
+|--------|-------------------|
+| `Persona` | `CRE` (con folio) o `MOD` con `datos_antes`/`datos_despues` de nombre y apellido paterno |
+| `EstudioSocioeconomico` | `CRE`; `CAM` cuando cambia `estado` (descripción `"antes → nuevo"`); `MOD` en el resto |
+| `EvaluacionRiesgo` | `CRE`/`MOD` guardando `{score_final, nivel_riesgo}` |
+| `Documento` | `VER` **solo** en la transición `verificado: False → True` |
+| `HistorialLaboral` | `VER` solo en la transición `verificada: False → True` |
+| `Referencia` | `VER` solo en la transición `verificada: False → True` |
+| Los 6 anteriores | `ELI` vía `post_delete` genérico (`signals.py:190`) |
+
+El patrón para detectar cambios es `pre_save` cachea el valor anterior → `post_save`
+compara. Por eso `VER` se emite una sola vez y no en cada guardado posterior.
+
+**Vista y acceso**
+
+- `AuditoriaListView` (`apps/auditorias/views.py:19`) — `LoginRequiredMixin`, 50 por página,
+  `select_related('usuario')`. Filtros GET combinables: `modelo`, `accion`, `usuario`,
+  `fecha_desde`, `fecha_hasta`.
+- URL: `auditorias:auditoria_list` → `/auditorias/`
+- Control de acceso: `MODULO_POR_PREFIJO` en `apps/usuarios/middleware.py:19` mapea
+  `/auditorias/` al módulo `auditorias`, sujeto a `ModuloPermisosMiddleware`.
+- Admin: registros visibles pero inmutables (`has_add_permission` y `has_change_permission`
+  en `False`; borrado solo para superusuarios).
+
+⚠️ **La sección no está enlazada desde `templates/base.html`** — hoy solo se alcanza
+escribiendo la URL. Ver tarea en §6.
+
+### 2.17 `api` — Placeholder
+
+Sin `urls.py` propio, sin modelos. Destinada a endpoints REST con Django REST Framework.
 
 ---
 
@@ -1334,11 +1466,26 @@ def form_valid(self, form):
 | 18 | Badge de notificaciones HTMX en navbar | ✅ Completada | UX |
 | 19 | Filtrado dinámico documentos por persona (HTMX) | ✅ Completada | UX Documentos |
 | 20 | Sistema de roles con PermisoModulo granular | ✅ Completada | Multi-perfil |
-| 21 | `apps/auditorias` — modelo y signals | ⬜ Pendiente | Trazabilidad |
+| 21 | `apps/auditorias` — modelo y signals | ✅ Completada | Trazabilidad |
 | 22 | `apps/api` — endpoints REST con DRF | ⬜ Pendiente | Integraciones |
-| 23 | Tests automatizados para modelos y vistas | ⬜ Pendiente | Calidad |
-| 24 | Race condition en folio (`select_for_update`) | ⬜ Pendiente | Producción |
+| 23 | Tests automatizados para modelos y vistas | 🟨 Parcial — 56 tests en 5 apps | Calidad |
+| 24 | Race condition en folio | ✅ Completada — `atomic()` + advisory lock en PostgreSQL | Producción |
 | 25 | Integración IA — análisis conclusiones y evaluación de riesgo | ✅ Completada | IA |
+| 26 | Pestañas del expediente configurables desde `TipoEstudio.secciones` | ✅ Completada | UX Expediente |
+| 27 | Enlazar `auditorias:auditoria_list` desde `base.html` | ⬜ Pendiente | Descubribilidad |
+| 28 | Migración faltante: `'auditorias'` en `choices` de `PermisoModulo.modulo` | ⬜ Pendiente | Consistencia |
+| 29 | Tests de `apps/auditorias` (`tests.py` vacío) | ⬜ Pendiente | Calidad |
+
+**Detalle de las pendientes nuevas:**
+
+- **27** — `templates/base.html` solo condiciona `personas`, `estudios`, `visitas` y
+  `evaluacion` (líneas 34, 40, 46, 52). La sección de auditoría funciona pero solo se
+  alcanza escribiendo `/auditorias/` a mano.
+- **28** — `apps/usuarios/models.py:20` añadió `('auditorias', 'Auditoría del Sistema')` a
+  `MODULOS_DISPONIBLES`, que es el `choices` de `PermisoModulo.modulo`, pero
+  `apps/usuarios/migrations/0002_*.py` no lo contiene. `makemigrations` generará un
+  `AlterField`. No rompe nada en ejecución —Django no valida `choices` en BD— pero deja
+  el estado de migraciones desincronizado del modelo.
 
 ---
 
@@ -1395,6 +1542,41 @@ def save(self, *args, **kwargs):
 
 ---
 
+## 7. Estado de la Suite de Tests
+
+**56 tests en 5 archivos.** Hasta abril de 2026 el proyecto tenía 0 tests; toda la suite
+es posterior.
+
+```bash
+python manage.py test apps        # 56 tests
+python manage.py test apps.estudios
+```
+
+> `python manage.py test` a secas descubre 0 tests, porque los tests viven bajo `apps/`.
+> Usar siempre `python manage.py test apps`.
+
+| Archivo | Tests | Cubre |
+|---------|-------|-------|
+| `apps/estudios/tests.py` | 25 | Transiciones de estado, `CambiarEstadoView`, `EstudioDetailView`, tokens, pestañas del expediente |
+| `apps/estudios/tests_candidato.py` | 11 | Portal público: bienvenida, token inválido, paso 1, gracias |
+| `apps/personas/tests.py` | 8 | Formato de folio, secuencia y concurrencia |
+| `apps/estudios/tests_ia.py` | 7 | Vistas IA con el cliente mockeado — no consumen API |
+| `apps/economia/tests.py` | 5 | Properties calculadas de `SituacionEconomica` |
+
+**Clases destacadas:**
+- `TestTabsExpediente` (`apps/estudios/tests.py:226`) — contrato botón↔panel de las pestañas.
+- `TestPersonaFolioConcurrencia` (`apps/personas/tests.py:73`) — usa `TransactionTestCase`.
+- `TestAnalizarEstudioIAView` / `TestSugerirEvaluacionIAView` — `unittest.mock.patch` sobre la fábrica del cliente.
+
+**Sin cobertura:** `auditorias` (la mayor incorporación funcional reciente, `tests.py` vacío),
+`documentos`, `domicilios`, `educacion`, `evaluacion`, `familia`, `laboral`, `notificaciones`,
+`referencias`, `reportes`, `visitas`, `configuracion`, `api`.
+
+**Requisito para correr la suite:** un archivo `.env` con `SECRET_KEY`. Sin él, cualquier
+comando de `manage.py` aborta con `decouple.UndefinedValueError: SECRET_KEY not found`.
+
+---
+
 ## Apéndice A — Registro de Campos no Estándar
 
 Las siguientes son excepciones al estándar de 3 chars para choices:
@@ -1408,18 +1590,19 @@ Las siguientes son excepciones al estándar de 3 chars para choices:
 
 ## Apéndice B — Apps sin URL Configurada
 
-Las siguientes apps están en `INSTALLED_APPS` pero **NO** tienen entrada en `esteconom/urls.py`:
+La única app en `INSTALLED_APPS` sin entrada en `esteconom/urls.py`:
 
-- `apps.auditorias`
 - `apps.api`
 
-> `apps.reportes` ya está registrada: `path('reportes/', include('apps.reportes.urls'))`.
-
-Al implementar las restantes, agregar en `esteconom/urls.py`:
+Al implementarla, agregar en `esteconom/urls.py`:
 ```python
 path('api/', include('apps.api.urls')),
-# auditorias generalmente no requiere URLs propias (es backend de signals)
 ```
+
+> **Actualizado en v3.0.** `apps.auditorias` ya está registrada
+> (`esteconom/urls.py:45` → `path('auditorias/', include('apps.auditorias.urls'))`).
+> Sí tiene URL propia: además del backend de signals expone `AuditoriaListView`.
+> `apps.reportes` estaba registrada desde antes.
 
 ---
 
@@ -1434,11 +1617,28 @@ path('api/', include('apps.api.urls')),
 | `GOOGLE_MAPAS_API_KEY` | No | `''` | API key de Google Maps Static API (croquis PDF) |
 | `MAPBOX_API_KEY` | No | `''` | Access token de Mapbox Static Images (croquis PDF) |
 | `DO_MODEL_ACCESS_KEY` | No | `''` | API key de DigitalOcean AI (endpoint OpenAI-compatible, modelo Llama 4 Maverick) |
+| `CSRF_TRUSTED_ORIGINS` | No | `''` | Orígenes confiables (CSV) |
+| `EMAIL_BACKEND` | No | consola en `DEBUG` | Backend de correo |
+| `EMAIL_HOST` | No | `localhost` | Servidor SMTP |
+| `EMAIL_PORT` | No | `587` | Puerto SMTP |
+| `EMAIL_USE_TLS` | No | `True` | TLS en SMTP |
+| `EMAIL_HOST_USER` | No | `''` | Usuario SMTP |
+| `EMAIL_HOST_PASSWORD` | No | `''` | Contraseña SMTP |
+| `DEFAULT_FROM_EMAIL` | No | `noreply@meraki-consultoria.mx` | Remitente por defecto |
 | `USE_SPACES` | No | `False` | Activar S3/Digital Ocean Spaces para archivos |
-| `AWS_ACCESS_KEY_ID` | Si (Spaces) | — | Access key del bucket S3/Spaces |
-| `AWS_SECRET_ACCESS_KEY` | Si (Spaces) | — | Secret key del bucket S3/Spaces |
-| `AWS_STORAGE_BUCKET_NAME` | Si (Spaces) | — | Nombre del bucket |
-| `AWS_S3_REGION_NAME` | Si (Spaces) | — | Región del bucket |
+| `SPACES_KEY` | Si (Spaces) | — | Access key del bucket → setting `AWS_ACCESS_KEY_ID` |
+| `SPACES_SECRET` | Si (Spaces) | — | Secret key → setting `AWS_SECRET_ACCESS_KEY` |
+| `SPACES_BUCKET` | Si (Spaces) | — | Nombre del bucket → setting `AWS_STORAGE_BUCKET_NAME` |
+| `SPACES_ENDPOINT_URL` | Si (Spaces) | — | Endpoint → setting `AWS_S3_ENDPOINT_URL` |
+| `SPACES_REGION` | Si (Spaces) | — | Región → setting `AWS_S3_REGION_NAME` |
+
+> **Corregido en v3.0.** Hasta v2.3 este apéndice listaba las variables de Spaces con los
+> nombres de los *settings* de Django (`AWS_ACCESS_KEY_ID`, …) en vez de los nombres de las
+> *variables de entorno* que `settings.py:168-172` realmente lee. Un `.env` escrito según la
+> tabla anterior habría fallado con `UndefinedValueError` al activar `USE_SPACES=True`.
+>
+> Nota adicional: el setting se llama `GOOGLE_MAPS_API_KEY` pero la variable de entorno es
+> `GOOGLE_MAPAS_API_KEY`, con la "A" de *mapas* en español (`settings.py:202`).
 
 Archivo `.env` de ejemplo:
 ```env
@@ -1483,12 +1683,11 @@ https://docs.google.com/forms/d/e/1FAIpQLSc75Ncb7ON5zEtl2m8kBHuH971DDD7VGQREtdRf
 
 ---
 
----
-
 ## Historial de Cambios
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **3.0** | **2026-09-21** | **Puesta al día tras 5 commits sin documentar (abril–septiembre 2026).** **`auditorias` deja de ser placeholder:** `RegistroAuditoria` (no hereda `TimestampModel`), `signals.py` auditando 6 modelos con `CRE/MOD/ELI/CAM/VER`, `AuditoriaMiddleware` en `MIDDLEWARE`, `AuditoriaListView` con 5 filtros, admin inmutable, módulo `auditorias` en `MODULOS_DISPONIBLES` — sección 2.16 reescrita, `api` pasa a 2.17. **Pestañas configurables:** `SECCIONES_DISPONIBLES` documentado como vocabulario canónico, métodos `tabs()`/`tabs_por_defecto()`/`etiquetas_secciones()` de `TipoEstudio`, `tab_list` en `EstudioDetailView`. **Corregida advertencia obsoleta:** el folio de `Persona` sí usa `transaction.atomic()` + `pg_advisory_xact_lock` desde el commit `4410ab3f`. **Nueva sección 7** con el estado de la suite (56 tests; antes 0) y el requisito de `.env`. Settings: `AuditoriaMiddleware`, `DO_MODEL_ACCESS_KEY`, tabla completa de variables de entorno, prefijo `/auditorias/`. Tareas 21 y 24 cerradas; 23 pasa a parcial; añadidas 26-29. |
 | 1.0 | 2026-02-22 | Versión inicial — modelos, fases 1-2 |
 | 1.1 | 2026-02-22 | Fase 3 (portal candidato), EstudioToken |
 | 1.2 | 2026-02-23 | Fase 4 (inspector campo), Fase 5 (PDF) |
@@ -1496,6 +1695,6 @@ https://docs.google.com/forms/d/e/1FAIpQLSc75Ncb7ON5zEtl2m8kBHuH971DDD7VGQREtdRf
 | 1.4 | 2026-03-08 | EmpresaCliente, secciones JSONField, corrección TRANSICIONES_VALIDAS |
 | 1.5 | 2026-03-08 | Fase 8 (HTMX documentos), EstudioToken properties, UsuarioRolEditarView |
 | 2.3 | 2026-04-27 | **Discrepancia corregida:** funciones auxiliares en `apps/reportes/views.py` — nombre real `_url_mapa` y `_descargar_imagen_mapa` (antes documentado incorrectamente como `_construir_mapa_url`). Creado `plan_final.md` con plan detallado para tareas 21-24. |
-| 2.2 | 2026-04-27 | **Fase 9 — Integración IA con Claude:** `apps/estudios/views_ia.py` (AnalizarEstudioIAView + SugerirEvaluacionIAView), URLs `analizar_ia`/`evaluar_ia`, botón "Analizar con IA" en estudio_detail, botón "Sugerir con IA" en evaluacionriesgo_form, `anthropic` en requirements.txt, `ANTHROPIC_API_KEY` en settings. **Fix PDF:** eliminado mensaje de ausencia de visita en `_pdf_croquis.html`. Sección 2.14b añadida. |
+| 2.2 | 2026-04-27 | **Fase 9 — Integración IA:** `apps/estudios/views_ia.py` (AnalizarEstudioIAView + SugerirEvaluacionIAView), URLs `analizar_ia`/`evaluar_ia`, botón "Analizar con IA" en estudio_detail, botón "Sugerir con IA" en evaluacionriesgo_form. *(Corregido en v3.0: esta fila decía `anthropic` y `ANTHROPIC_API_KEY`. La implementación real usa DigitalOcean AI Platform vía el SDK `openai` y la variable `DO_MODEL_ACCESS_KEY` — ver sección 2.14b.)* **Fix PDF:** eliminado mensaje de ausencia de visita en `_pdf_croquis.html`. Sección 2.14b añadida. |
 | 2.1 | 2026-04-09 | Geolocalización en cascada para croquis del reporte: 3 fuentes (visita → domicilio → Nominatim geocodificado). `_geocodificar_nominatim()`, `_construir_mapa_url()`, `origen_coordenadas` en contexto PDF. Template actualizado con nota de origen. |
 | **2.0** | **2026-04-09** | **Análisis completo del estado real del código:** GPS en Domicilio (latitud/longitud, observaciones_inmueble), comentarios_colonos en VisitaDomiciliaria, campos de verificación en Referencia (actividad_tiempo_libre/lugares_laborado/conducta/cualidades), tipos de foto en Documento (FSE/FFA/FFR/FIZ/FDE/FDI), FOTOS_TIPOS frozenset y property es_foto, PermisoModulo y rol AUD en usuarios, ModuloPermisosMiddleware, PermisosUsuarioView/CrearUsuarioView, settings documentados (middleware/context processors/storage), nueva sección 1.5 configuración del proyecto, nueva sección 2.15 usuarios, protocolo de actualización obligatorio. |
